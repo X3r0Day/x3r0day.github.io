@@ -24,6 +24,7 @@ interface TrailParticle {
 
 export function MouseEffect() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const dprRef = useRef(1);
     const stateRef = useRef({
         x: -100,
         y: -100,
@@ -41,49 +42,90 @@ export function MouseEffect() {
     });
 
     useEffect(() => {
+        if (!window.matchMedia("(pointer: fine)").matches) return;
+
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext("2d")!;
         let raf = 0;
+        const s = stateRef.current;
+
+        const isInteractiveTarget = (target: EventTarget | null) => {
+            if (!(target instanceof Element)) return false;
+            return !!(
+                target.closest("a") ||
+                target.closest("button") ||
+                target.closest("[role='button']") ||
+                target.closest("input") ||
+                target.closest("textarea") ||
+                target.closest("select") ||
+                target.closest("summary")
+            );
+        };
+
+        const resetCursor = () => {
+            s.x = -100;
+            s.y = -100;
+            s.targetX = -100;
+            s.targetY = -100;
+            s.vx = 0;
+            s.vy = 0;
+            s.speed = 0;
+            s.hovering = false;
+            s.clicking = false;
+            s.clickPulse = 0;
+            s.trail = [];
+        };
 
         const resize = () => {
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            dprRef.current = dpr;
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            canvas.width = Math.round(window.innerWidth * dpr);
+            canvas.height = Math.round(window.innerHeight * dpr);
             canvas.style.width = `${window.innerWidth}px`;
             canvas.style.height = `${window.innerHeight}px`;
-            ctx.scale(dpr, dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         };
         resize();
         window.addEventListener("resize", resize);
 
-        const s = stateRef.current;
-
-        const onMove = (e: MouseEvent) => {
+        const onPointerMove = (e: PointerEvent) => {
+            if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
             s.targetX = e.clientX;
             s.targetY = e.clientY;
+            s.hovering = isInteractiveTarget(e.target);
         };
 
-        const onOver = (e: MouseEvent) => {
-            const t = e.target as HTMLElement;
-            s.hovering = !!(
-                t.tagName === "A" || t.tagName === "BUTTON" ||
-                t.closest("a") || t.closest("button") ||
-                t.getAttribute("role") === "button"
-            );
+        const onPointerOver = (e: PointerEvent) => {
+            s.hovering = isInteractiveTarget(e.target);
         };
-        const onOut = () => { s.hovering = false; };
-        const onDown = () => { s.clicking = true; s.clickPulse = 1; };
-        const onUp = () => { s.clicking = false; };
 
-        window.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseover", onOver);
-        document.addEventListener("mouseout", onOut);
-        window.addEventListener("mousedown", onDown);
-        window.addEventListener("mouseup", onUp);
+        const onPointerOut = (e: PointerEvent) => {
+            s.hovering = isInteractiveTarget(e.relatedTarget);
+        };
+
+        const onPointerDown = () => {
+            s.clicking = true;
+            s.clickPulse = 1;
+        };
+
+        const onPointerUp = () => {
+            s.clicking = false;
+        };
+
+        window.addEventListener("pointermove", onPointerMove, { passive: true });
+        document.addEventListener("pointerover", onPointerOver);
+        document.addEventListener("pointerout", onPointerOut);
+        window.addEventListener("pointerdown", onPointerDown);
+        window.addEventListener("pointerup", onPointerUp);
+        window.addEventListener("blur", resetCursor);
+        document.addEventListener("visibilitychange", resetCursor);
 
         const draw = () => {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
 
             // Smooth follow
             const ease = 0.15;
@@ -112,6 +154,9 @@ export function MouseEffect() {
                     angle: s.angle + (Math.random() - 0.5) * 0.5 + Math.PI,
                     speed: 0.3 + Math.random() * 0.5,
                 });
+                if (s.trail.length > 40) {
+                    s.trail.shift();
+                }
             }
 
             // Update & draw trail
@@ -270,11 +315,13 @@ export function MouseEffect() {
 
         return () => {
             cancelAnimationFrame(raf);
-            window.removeEventListener("mousemove", onMove);
-            document.removeEventListener("mouseover", onOver);
-            document.removeEventListener("mouseout", onOut);
-            window.removeEventListener("mousedown", onDown);
-            window.removeEventListener("mouseup", onUp);
+            window.removeEventListener("pointermove", onPointerMove);
+            document.removeEventListener("pointerover", onPointerOver);
+            document.removeEventListener("pointerout", onPointerOut);
+            window.removeEventListener("pointerdown", onPointerDown);
+            window.removeEventListener("pointerup", onPointerUp);
+            window.removeEventListener("blur", resetCursor);
+            document.removeEventListener("visibilitychange", resetCursor);
             window.removeEventListener("resize", resize);
         };
     }, []);

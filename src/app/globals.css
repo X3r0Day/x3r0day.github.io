@@ -24,17 +24,24 @@
     color: var(--foreground);
     font-family: "JetBrains Mono", "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", monospace;
     overflow-x: hidden;
-    cursor: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     margin: 0;
     padding: 0;
   }
+}
 
-  *,
-  *::before,
-  *::after {
-    cursor: none !important;
+@media (pointer: fine) {
+  @layer base {
+    body {
+      cursor: none;
+    }
+
+    *,
+    *::before,
+    *::after {
+      cursor: none !important;
+    }
   }
 }
 
