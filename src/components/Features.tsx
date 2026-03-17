@@ -123,27 +123,27 @@ export function Features() {
     const features = [
         {
             title: "Vulnerability Research",
-            description: "Deep-diving into zero-day exploits, reverse engineering binaries, and uncovering hidden attack surfaces across modern applications.",
+            description: "Finds and documents vulnerabilities in real-world software, with a focus on reproducible analysis.",
         },
         {
             title: "Exploit Development",
-            description: "Weaponizing vulnerabilities through FUD payload crafting, memory corruption bypasses, and cross-architecture shellcoding.",
+            description: "Proof-of-concept development focused on reliability, bypasses, and cross-architecture behavior.",
         },
         {
             title: "OSINT & Reconnaissance",
-            description: "Automated intelligence gathering pipelines that continuously monitor, correlate, and surface actionable security insights.",
+            description: "Pipelines that monitor public repos and archives, then triage into actionable leads.",
         },
         {
             title: "Cryptographic Systems",
-            description: "Designed HashLock - An Password Manager which is completely offline and secure.",
+            description: "Built HashLock, an offline password manager with encrypted storage.",
         },
         {
             title: "Binary Analysis",
-            description: "Static and dynamic analysis of opaque binaries to reconstruct logic, identify flaws, and simulate execution paths.",
+            description: "Static and dynamic analysis to reconstruct control flow and spot flaws.",
         },
         {
             title: "Tool Development",
-            description: "Building specialized security utilities, API sniffers, pwd managers, and automated exploitation frameworks from the ground up.",
+            description: "Security utilities and research helpers I use daily: API sniffers, archive miners, and exploit scaffolds.",
         },
     ];
 
@@ -164,7 +164,7 @@ export function Features() {
                         transition={{ duration: 0.6 }}
                         className="text-xs font-mono tracking-[0.3em] uppercase text-zinc-600 mb-4 block"
                     >
-                        What I Do
+                        What I Actually Do
                     </motion.span>
                     <h2 className="text-5xl md:text-7xl font-bold tracking-tight">
                         <motion.span
@@ -183,7 +183,7 @@ export function Features() {
                             transition={{ duration: 0.8, delay: 0.2 }}
                             className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-zinc-400 to-zinc-600"
                         >
-                            SKILLS & FRAMEWORKS
+                            WORK & SYSTEMS
                         </motion.span>
                     </h2>
                 </motion.div>

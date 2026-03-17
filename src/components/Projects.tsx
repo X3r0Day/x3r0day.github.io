@@ -84,17 +84,17 @@ export function Projects() {
     const projects = [
         {
             title: "XeroDay APISniffer",
-            description: "Advanced Python implementation aimed at uncovering innocently shipped APIs through continuous chunking.",
+            description: "Python tool that scans public GitHub repos for exposed secrets and keeps a local index for querying.",
             tags: ["Python", "Security", "OSINT"],
         },
         {
             title: "HashLock",
-            description: "An fully fledged offline GUI Password Manager for Linux/Windows",
+            description: "A fully offline GUI password manager for Linux and Windows with encrypted vaults.",
             tags: ["Python", "Cryptography", "Encrypted"],
         },
         {
             title: "Information Disclosure",
-            description: "An tool that can scrape deleted data from the internet",
+            description: "A tool that uses the Internet Archive CDX API to surface deleted or archived files.",
             tags: ["Python", "WebArchive"],
         }
     ];
@@ -109,7 +109,7 @@ export function Projects() {
                 className="w-full max-w-7xl mx-auto"
             >
                 <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-20 text-center">
-                    SELECTED ORIGINALS
+                    SELECTED BUILDS
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-items-center w-full">

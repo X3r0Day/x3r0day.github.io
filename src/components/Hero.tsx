@@ -61,16 +61,26 @@ export function Hero() {
                     className="px-6 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8"
                 >
                     <span className="text-sm font-medium tracking-widest text-zinc-400 uppercase">
-                        Security Researcher
+                        X3r0Day // Security Research
                     </span>
                 </motion.div>
 
                 <h1 className="text-6xl md:text-[10vw] font-black tracking-tighter leading-none mb-6">
-                    <span className="block text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-600">
-                        <GlitchText delay={0.3}>BUILDING</GlitchText>
+                    <span className="block">
+                        <GlitchText
+                            delay={0.3}
+                            className="block text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-600"
+                        >
+                            HUNTING
+                        </GlitchText>
                     </span>
-                    <span className="block text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-300 to-zinc-700">
-                        <GlitchText delay={0.6}>THE UNSEEN</GlitchText>
+                    <span className="block">
+                        <GlitchText
+                            delay={0.6}
+                            className="block text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-300 to-zinc-700"
+                        >
+                            THE UNSEEN
+                        </GlitchText>
                     </span>
                 </h1>
 
@@ -80,7 +90,7 @@ export function Hero() {
                     transition={{ duration: 1, delay: 1.2, ease: "easeOut" }}
                     className="max-w-2xl text-lg md:text-2xl text-zinc-400 font-light"
                 >
-                    Specializing in vulnerability research, exploit development, and low-level system analysis. Uncovering what&apos;s hidden beneath the surface of modern software.
+                    Reverse engineering, exploit development, and low-level system analysis. I live in debuggers and disassemblers, tracing crashes to root cause and building repeatable proofs of concept.
                 </motion.p>
             </motion.div>
 
@@ -102,7 +112,7 @@ export function Hero() {
                         <GlitchText delay={2}>XeroDay API Sniffer</GlitchText>
                     </h3>
                     <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-6 max-w-2xl">
-                        GitHub-focused secret discovery toolkit - scanning public repos for exposed API keys, tokens, and credentials. AI-first workflows with natural-language routing.
+                        GitHub-focused secret discovery toolkit that scans public repos for exposed keys, tokens, and credentials. Includes a natural-language query layer for local findings.
                     </p>
                     <div className="flex flex-wrap gap-2 mb-6">
                         {["Python", "AI Workflow", "Security", "OSINT"].map((tag) => (

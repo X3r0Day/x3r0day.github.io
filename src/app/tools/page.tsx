@@ -134,13 +134,13 @@ function ToolCard({ name, tagline, description, features, tags, link, isHero, in
 const tools = [
     {
         name: "XeroDay API Sniffer",
-        tagline: "GitHub-focused secret discovery toolkit for scanning public repositories",
+        tagline: "Scans public GitHub repos for exposed secrets.",
         description:
-            "API Sniffer is a GitHub-focused secret discovery toolkit for scanning public repositories and identifying exposed API keys, tokens, webhooks, and other sensitive credentials. It is part of the X3r0Day Framework and is built for security research, defensive analysis, and responsible disclosure. Supports AI-first launch path through natural-language requests routed into discovery, scanning, and direct database querying.",
+            "Scans public GitHub repos for exposed API keys, tokens, webhooks, and credentials. Keeps a local index for triage and supports natural-language queries over findings. Built for security research and responsible disclosure.",
         features: [
-            { text: "Discovery — Queries GitHub for newly created public repos, deduplicates against scan history, stores fresh targets." },
-            { text: "Scanning — Downloads repo archives, scans matching files and commit patches, writes results to structured databases." },
-            { text: "AI Search — Queries local findings with natural language. Database questions answered directly from the launcher flow." },
+            { text: "Discovery - Tracks newly created public repos and deduplicates against scan history." },
+            { text: "Scanning - Downloads repo archives and commit patches, then writes findings to structured databases." },
+            { text: "Query - Natural-language search over local findings." },
         ],
         tags: ["Python", "AI Workflow", "Security", "OSINT", "GitHub API"],
         link: "https://github.com/X3r0Day/XeroDay-APISniffer",
@@ -148,13 +148,13 @@ const tools = [
     },
     {
         name: "Information Disclosure",
-        tagline: "Dig up the past for publicly available data",
+        tagline: "Archive mining for public, deleted, or hard-to-find data.",
         description:
-            "A tool to dig up the past for publicly available data — because why wait for secrets to come to you when you can just search for them? Uses CDX API of Web Archive to retrieve archived files and filter out unnecessary ones.",
+            "Uses the Internet Archive CDX API to retrieve archived files, then filters and surfaces relevant artifacts for research.",
         features: [
-            { text: "Uses CDX API of Web Archive to get files and filter out unnecessary ones" },
-            { text: "Automated past data discovery for security research" },
-            { text: "Surfaces publicly available but hard-to-find information" },
+            { text: "Uses the Internet Archive CDX API to retrieve archived files" },
+            { text: "Filters and surfaces relevant artifacts for research" },
+            { text: "Focus on publicly available, time-shifted data" },
         ],
         tags: ["Python", "Web Archive", "CDX API", "OSINT"],
         link: "https://github.com/X3r0Day/InformationDisclosure",
@@ -162,14 +162,14 @@ const tools = [
     },
     {
         name: "HashLock",
-        tagline: "Secure, offline password manager with encrypted file storage",
+        tagline: "Offline password manager with encrypted vaults.",
         description:
-            "HashLock Password Manager keeps all your secrets safe in a fully offline and secure environment. Master password authentication with bcrypt and encrypted file storage using Fernet. Cross-platform compatible across Linux, Windows, and Mac.",
+            "Stores credentials locally; master password hashed with bcrypt; vault encrypted with Fernet. Cross-platform via Tkinter.",
         features: [
-            { text: "Cross-Platform — Works the same on Linux, Windows, and Mac" },
-            { text: "Fully Offline — No network requests are ever made" },
-            { text: "Master Password Protection — bcrypt hashing keeps secrets locked" },
-            { text: "Data Encryption — Credentials only accessible with Master Password" },
+            { text: "Cross-platform UI via Tkinter" },
+            { text: "Fully offline - no network requests" },
+            { text: "Master password hashed with bcrypt" },
+            { text: "Vault encrypted with Fernet" },
         ],
         tags: ["Python", "Cryptography", "Tkinter", "Fernet", "bcrypt"],
         link: "https://github.com/X3r0Day/HashLock",
@@ -202,7 +202,7 @@ export default function ToolsPage() {
                         transition={{ duration: 0.8, delay: 0.4 }}
                         className="text-zinc-400 text-lg max-w-2xl"
                     >
-                        Security tools and utilities built for security research and analysis.
+                        Tools I use in my own research, released as open source.
                     </motion.p>
                 </div>
 

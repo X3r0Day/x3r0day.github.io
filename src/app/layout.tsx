@@ -4,8 +4,8 @@ import { MouseEffect } from "@/components/MouseEffect";
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 
 export const metadata: Metadata = {
-  title: "Creative Portfolio",
-  description: "Ultra animated interactive portfolio",
+  title: "X3r0Day | Security Research & Exploit Tooling",
+  description: "Reverse engineering, exploit development, and OSINT tooling. Terminal-first field notes and open-source utilities.",
 };
 
 export default function RootLayout({
