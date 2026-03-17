@@ -83,7 +83,7 @@ function FeatureItem({ index, title, description }: FeatureItemProps) {
                 ease: [0.16, 1, 0.3, 1],
             }}
             whileHover={{ scale: 1.03 }}
-            className="group relative flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-8 transition-colors duration-500 hover:border-white/15 hover:bg-white/[0.04]"
+            className="group relative flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6 sm:p-8 transition-colors duration-500 hover:border-white/15 hover:bg-white/[0.04]"
         >
             {/* Hover glow */}
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/0 to-violet-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-hover:from-indigo-500/5 group-hover:to-violet-500/5 pointer-events-none" />
@@ -148,14 +148,14 @@ export function Features() {
     ];
 
     return (
-        <section className="relative w-full py-32 px-4">
+        <section className="relative w-full py-24 md:py-32 px-4">
             <div className="max-w-6xl mx-auto">
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-100px" }}
                     transition={{ duration: 0.8 }}
-                    className="mb-20"
+                    className="mb-12 md:mb-20"
                 >
                     <motion.span
                         initial={{ opacity: 0, x: -20 }}
@@ -166,7 +166,7 @@ export function Features() {
                     >
                         What I Actually Do
                     </motion.span>
-                    <h2 className="text-5xl md:text-7xl font-bold tracking-tight">
+                    <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight">
                         <motion.span
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}

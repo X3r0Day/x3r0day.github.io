@@ -52,7 +52,7 @@ export function Hero() {
             {/* Parallax title section — this fades on scroll */}
             <motion.div
                 style={{ y, opacity }}
-                className="relative z-10 flex flex-col items-center justify-center text-center px-4 min-h-[70vh] pt-32"
+                className="relative z-10 flex flex-col items-center justify-center text-center px-4 min-h-[70vh] pt-24 sm:pt-28 md:pt-32"
             >
                 <motion.div
                     initial={{ opacity: 0, y: 20, scale: 0.9 }}
@@ -65,7 +65,7 @@ export function Hero() {
                     </span>
                 </motion.div>
 
-                <h1 className="text-6xl md:text-[10vw] font-black tracking-tighter leading-none mb-6">
+                <h1 className="text-5xl sm:text-6xl md:text-[10vw] font-black tracking-tighter leading-none mb-6">
                     <span className="block">
                         <GlitchText
                             delay={0.3}
@@ -88,7 +88,7 @@ export function Hero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 1, delay: 1.2, ease: "easeOut" }}
-                    className="max-w-2xl text-lg md:text-2xl text-zinc-400 font-light"
+                    className="max-w-2xl text-base sm:text-lg md:text-2xl text-zinc-400 font-light"
                 >
                     Reverse engineering, exploit development, and low-level system analysis. I live in debuggers and disassemblers, tracing crashes to root cause and building repeatable proofs of concept.
                 </motion.p>
@@ -101,17 +101,17 @@ export function Hero() {
                 transition={{ duration: 1, delay: 1.6, ease: [0.16, 1, 0.3, 1] }}
                 className="relative z-10 w-full max-w-3xl mx-auto px-4 pb-12"
             >
-                <div className="relative rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.06] via-transparent to-violet-500/[0.04] p-8 md:p-10 overflow-hidden">
+                <div className="relative rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.06] via-transparent to-violet-500/[0.04] p-6 sm:p-8 md:p-10 overflow-hidden">
                     <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
                     <div className="flex items-center gap-3 mb-4">
                         <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/20">
                             ★ Flagship
                         </span>
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400 mb-3">
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400 mb-3">
                         <GlitchText delay={2}>XeroDay API Sniffer</GlitchText>
                     </h3>
-                    <p className="text-zinc-400 text-sm md:text-base leading-relaxed mb-6 max-w-2xl">
+                    <p className="text-zinc-400 text-sm sm:text-base leading-relaxed mb-6 max-w-2xl">
                         GitHub-focused secret discovery toolkit that scans public repos for exposed keys, tokens, and credentials. Includes a natural-language query layer for local findings.
                     </p>
                     <div className="flex flex-wrap gap-2 mb-6">

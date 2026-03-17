@@ -26,7 +26,7 @@ export default function Home() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full py-32 px-4 border-t border-white/5 bg-gradient-to-b from-transparent to-red-500/[0.02]"
+        className="relative w-full py-20 md:py-32 px-4 border-t border-white/5 bg-gradient-to-b from-transparent to-red-500/[0.02]"
       >
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
@@ -37,11 +37,11 @@ export default function Home() {
             className="h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent mb-12"
           />
 
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tighter mb-6 text-white/90">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold tracking-tighter mb-6 text-white/90">
             TECHNICAL DISCLAIMER
           </h2>
 
-          <p className="text-zinc-500 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto italic">
+          <p className="text-zinc-500 text-base sm:text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto italic">
             &ldquo;I am <span className="text-red-400 font-medium">not</span> a Web Developer. This site exists purely to house my research and tools in an aesthetic shell. My true environment is the terminal and the debugger.&rdquo;
           </p>
 
@@ -62,7 +62,7 @@ export default function Home() {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 1 }}
-        className="relative w-full py-20 flex flex-col items-center justify-center mt-20 border-t border-white/5 overflow-hidden"
+        className="relative w-full py-14 md:py-20 flex flex-col items-center justify-center mt-12 md:mt-20 border-t border-white/5 overflow-hidden"
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[200px] bg-indigo-500/[0.03] rounded-full blur-[80px] pointer-events-none" />
 
@@ -79,7 +79,7 @@ export default function Home() {
           whileInView={{ opacity: 0.4, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="font-mono text-sm tracking-[0.4em] uppercase text-zinc-500"
+          className="font-mono text-[10px] sm:text-sm tracking-[0.4em] uppercase text-zinc-500"
         >
           END OF LINE
         </motion.p>

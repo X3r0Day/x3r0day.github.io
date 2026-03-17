@@ -53,7 +53,7 @@ function ProjectCard({ title, description, tags }: ProjectProps) {
                 rotateY,
                 transformStyle: "preserve-3d",
             }}
-            className="relative flex flex-col justify-between h-[400px] w-full max-w-[500px] rounded-3xl "
+            className="relative flex flex-col justify-between h-[320px] sm:h-[360px] md:h-[400px] w-full max-w-[500px] rounded-3xl "
         >
             <div className="absolute inset-0 bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-3xl" style={{ transform: "translateZ(0px)" }} />
 
@@ -61,10 +61,10 @@ function ProjectCard({ title, description, tags }: ProjectProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-transparent rounded-3xl pointer-events-none" style={{ transform: "translateZ(10px)" }} />
 
             <div className="relative p-8 h-full flex flex-col" style={{ transform: "translateZ(50px)" }}>
-                <h3 className="text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-500">
                     {title}
                 </h3>
-                <p className="text-zinc-400 text-lg leading-relaxed flex-grow">
+                <p className="text-zinc-400 text-base sm:text-lg leading-relaxed flex-grow">
                     {description}
                 </p>
 
@@ -100,7 +100,7 @@ export function Projects() {
     ];
 
     return (
-        <section className="relative w-full py-32 px-4 flex flex-col items-center">
+        <section className="relative w-full py-24 md:py-32 px-4 flex flex-col items-center">
             <motion.div
                 initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -108,11 +108,11 @@ export function Projects() {
                 transition={{ duration: 0.8 }}
                 className="w-full max-w-7xl mx-auto"
             >
-                <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-20 text-center">
+                <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight mb-12 md:mb-20 text-center">
                     SELECTED BUILDS
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 justify-items-center w-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 justify-items-center w-full">
                     {projects.map((p, i) => (
                         <motion.div
                             key={i}

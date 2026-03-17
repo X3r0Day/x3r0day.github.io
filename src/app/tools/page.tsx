@@ -39,7 +39,7 @@ function ToolCard({ name, tagline, description, features, tags, link, isHero, in
                     : "bg-gradient-to-br from-white/[0.03] to-transparent"
                 }`} />
 
-            <div className={`relative ${isHero ? "p-8 md:p-12" : "p-8"}`}>
+            <div className={`relative ${isHero ? "p-6 sm:p-8 md:p-12" : "p-6 sm:p-8"}`}>
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
                     <div>
                         {isHero && (
@@ -47,12 +47,12 @@ function ToolCard({ name, tagline, description, features, tags, link, isHero, in
                                 ★ Flagship Project
                             </span>
                         )}
-                        <h3 className={`font-bold tracking-tight ${isHero ? "text-3xl md:text-5xl" : "text-2xl"}`}>
+                        <h3 className={`font-bold tracking-tight ${isHero ? "text-2xl sm:text-3xl md:text-5xl" : "text-xl sm:text-2xl"}`}>
                             <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">
                                 {name}
                             </span>
                         </h3>
-                        <p className={`mt-2 text-zinc-500 font-light ${isHero ? "text-lg" : "text-sm"}`}>
+                        <p className={`mt-2 text-zinc-500 font-light ${isHero ? "text-base sm:text-lg" : "text-sm"}`}>
                             {tagline}
                         </p>
                     </div>
@@ -73,7 +73,7 @@ function ToolCard({ name, tagline, description, features, tags, link, isHero, in
                     </motion.a>
                 </div>
 
-                <p className={`text-zinc-400 leading-relaxed mb-8 ${isHero ? "text-base md:text-lg max-w-3xl" : "text-sm"}`}>
+                <p className={`text-zinc-400 leading-relaxed mb-8 ${isHero ? "text-base sm:text-lg max-w-3xl" : "text-sm"}`}>
                     {description}
                 </p>
 
@@ -181,9 +181,9 @@ export default function ToolsPage() {
     return (
         <>
             <Navbar />
-            <main className="relative w-full min-h-screen pt-32 pb-20 px-4">
+            <main className="relative w-full min-h-screen pt-28 md:pt-32 pb-16 md:pb-20 px-4">
                 {/* Page header */}
-                <div className="max-w-6xl mx-auto mb-16">
+                <div className="max-w-6xl mx-auto mb-12 md:mb-16">
                     <motion.span
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
@@ -192,7 +192,7 @@ export default function ToolsPage() {
                     >
                         Arsenal
                     </motion.span>
-                    <h1 className="text-5xl md:text-8xl font-bold tracking-tight mb-6">
+                    <h1 className="text-4xl sm:text-5xl md:text-8xl font-bold tracking-tight mb-6">
                         <GlitchText delay={0.2} className="text-white">OPEN SOURCE</GlitchText>{" "}
                         <GlitchText delay={0.5} className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">TOOLS</GlitchText>
                     </h1>
@@ -200,7 +200,7 @@ export default function ToolsPage() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: 0.4 }}
-                        className="text-zinc-400 text-lg max-w-2xl"
+                        className="text-zinc-400 text-base sm:text-lg max-w-2xl"
                     >
                         Tools I use in my own research, released as open source.
                     </motion.p>

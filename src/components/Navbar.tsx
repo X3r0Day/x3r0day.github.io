@@ -37,19 +37,19 @@ export function Navbar() {
             initial={{ y: -80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className={`fixed top-0 left-0 right-0 z-[900] flex items-center justify-center px-6 py-4 transition-all duration-500 ${scrolled
+            className={`fixed top-0 left-0 right-0 z-[900] flex items-center justify-center px-4 py-3 sm:px-6 sm:py-4 transition-all duration-500 ${scrolled
                     ? "bg-black/60 backdrop-blur-xl border-b border-white/5"
                     : "bg-transparent"
                 }`}
         >
-            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-xl px-2 py-1.5">
+            <div className="flex flex-wrap items-center justify-center gap-1 rounded-full border border-white/10 bg-white/[0.03] backdrop-blur-xl px-2 py-1.5 max-w-[95vw]">
                 {navItems.map((item, i) => {
                     const active = pathname === item.href;
                     return (
                         <motion.div key={item.label} initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.4 + i * 0.1 }}>
                             <Link
                                 href={item.href}
-                                className={`group relative px-5 py-2 text-sm font-medium transition-colors duration-300 rounded-full inline-block ${active ? "text-white" : "text-zinc-400 hover:text-white"
+                                className={`group relative px-3 py-1.5 text-xs sm:px-5 sm:py-2 sm:text-sm font-medium transition-colors duration-300 rounded-full inline-block ${active ? "text-white" : "text-zinc-400 hover:text-white"
                                     }`}
                             >
                                 {item.label}
@@ -68,7 +68,7 @@ export function Navbar() {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: 0.6 + i * 0.1 }}
-                        className="group relative px-5 py-2 text-sm font-medium text-zinc-400 transition-colors duration-300 hover:text-white rounded-full"
+                        className="group relative px-3 py-1.5 text-xs sm:px-5 sm:py-2 sm:text-sm font-medium text-zinc-400 transition-colors duration-300 hover:text-white rounded-full"
                         onClick={(e) => handleScrollClick(e, item.href)}
                     >
                         {item.label}

@@ -31,6 +31,12 @@
   }
 }
 
+@media (max-width: 768px) {
+  body {
+    background-attachment: scroll;
+  }
+}
+
 @media (pointer: fine) {
   @layer base {
     body {
