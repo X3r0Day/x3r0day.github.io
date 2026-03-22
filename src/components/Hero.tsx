@@ -58,10 +58,11 @@ export function Hero() {
                     initial={{ opacity: 0, y: 20, scale: 0.9 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                    className="px-6 py-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-md mb-8"
+                    className="px-6 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 backdrop-blur-md mb-8 flex items-center gap-3"
                 >
-                    <span className="text-sm font-medium tracking-widest text-zinc-400 uppercase">
-                        X3r0Day // Security Research
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-sm font-mono tracking-[0.3em] text-emerald-400 uppercase">
+                        SECURITY RESEARCHER // OPERATOR
                     </span>
                 </motion.div>
 
@@ -69,7 +70,7 @@ export function Hero() {
                     <span className="block">
                         <GlitchText
                             delay={0.3}
-                            className="block text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-600"
+                            className="block text-white"
                         >
                             HUNTING
                         </GlitchText>
@@ -77,7 +78,7 @@ export function Hero() {
                     <span className="block">
                         <GlitchText
                             delay={0.6}
-                            className="block text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-300 to-zinc-700"
+                            className="block text-emerald-500"
                         >
                             THE UNSEEN
                         </GlitchText>
@@ -101,10 +102,11 @@ export function Hero() {
                 transition={{ duration: 1, delay: 1.6, ease: [0.16, 1, 0.3, 1] }}
                 className="relative z-10 w-full max-w-3xl mx-auto px-4 pb-12"
             >
-                <div className="relative rounded-3xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.06] via-transparent to-violet-500/[0.04] p-6 sm:p-8 md:p-10 overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+                <div className="relative rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.06] via-transparent to-emerald-500/[0.04] p-6 sm:p-8 md:p-10 overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
+                    <div className="scanline" />
                     <div className="flex items-center gap-3 mb-4">
-                        <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/20">
+                        <span className="px-3 py-1 text-[10px] font-mono tracking-widest uppercase bg-emerald-500/20 text-emerald-300 rounded-full border border-emerald-500/20">
                             ★ Flagship
                         </span>
                     </div>
@@ -168,9 +170,21 @@ export function Hero() {
             </motion.div>
 
             {/* Ambient glows */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.02] rounded-full blur-[120px] pointer-events-none -z-10" />
-            <div className="absolute top-[40%] left-[30%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/[0.06] rounded-full blur-[100px] pointer-events-none -z-10" />
-            <div className="absolute top-[60%] right-[20%] w-[300px] h-[300px] bg-violet-500/[0.04] rounded-full blur-[80px] pointer-events-none -z-10" />
+            <motion.div
+                animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/[0.02] rounded-full blur-[120px] pointer-events-none -z-10"
+            />
+            <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0.7, 0.4] }}
+                transition={{ duration: 10, delay: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[40%] left-[30%] -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/[0.06] rounded-full blur-[100px] pointer-events-none -z-10"
+            />
+            <motion.div
+                animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 12, delay: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-[60%] right-[20%] w-[300px] h-[300px] bg-emerald-500/[0.04] rounded-full blur-[80px] pointer-events-none -z-10"
+            />
         </section>
     );
 }

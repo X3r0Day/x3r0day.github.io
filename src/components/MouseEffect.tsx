@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useMotionTemplate, useMotionValue, useSpring } from "framer-motion";
 
 /*
   A morphing geometric cursor rendered on Canvas.
@@ -40,6 +41,11 @@ export function MouseEffect() {
         rotation: 0,
         trail: [] as TrailParticle[],
     });
+
+    const mouseX = useMotionValue(-100);
+    const mouseY = useMotionValue(-100);
+    const mouseXSpring = useSpring(mouseX, { stiffness: 1000, damping: 50 });
+    const mouseYSpring = useSpring(mouseY, { stiffness: 1000, damping: 50 });
 
     useEffect(() => {
         if (!window.matchMedia("(pointer: fine)").matches) return;
@@ -94,6 +100,8 @@ export function MouseEffect() {
             if (e.pointerType !== "mouse" && e.pointerType !== "pen") return;
             s.targetX = e.clientX;
             s.targetY = e.clientY;
+            mouseX.set(e.clientX);
+            mouseY.set(e.clientY);
             s.hovering = isInteractiveTarget(e.target);
         };
 
@@ -173,7 +181,7 @@ export function MouseEffect() {
                 }
 
                 const t = 1 - p.life / p.maxLife;
-                ctx.fillStyle = `rgba(139, 92, 246, ${t * 0.4})`;
+                ctx.fillStyle = `rgba(0, 255, 0, ${t * 0.4})`;
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, t * 1.5, 0, Math.PI * 2);
                 ctx.fill();
@@ -182,7 +190,7 @@ export function MouseEffect() {
             // Click shockwave
             if (s.clickPulse > 0.01) {
                 const radius = (1 - s.clickPulse) * 40;
-                ctx.strokeStyle = `rgba(139, 92, 246, ${s.clickPulse * 0.6})`;
+                ctx.strokeStyle = `rgba(0, 255, 0, ${s.clickPulse * 0.6})`;
                 ctx.lineWidth = s.clickPulse * 2;
                 ctx.beginPath();
                 ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
@@ -196,7 +204,7 @@ export function MouseEffect() {
                 // ── RETICLE MODE ──
                 const r1 = 16;
                 const r2 = 22;
-                ctx.strokeStyle = "rgba(139, 92, 246, 0.8)";
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.8)";
                 ctx.lineWidth = 1;
 
                 // Rotating arcs
@@ -208,7 +216,7 @@ export function MouseEffect() {
                 }
 
                 // Inner arcs (counter-rotate)
-                ctx.strokeStyle = "rgba(139, 92, 246, 0.4)";
+                ctx.strokeStyle = "rgba(0, 255, 0, 0.4)";
                 for (let i = 0; i < 4; i++) {
                     const startAngle = -s.rotation * 3 + (i * Math.PI) / 2 + 0.4;
                     ctx.beginPath();
@@ -217,7 +225,7 @@ export function MouseEffect() {
                 }
 
                 // Center dot
-                ctx.fillStyle = "rgba(139, 92, 246, 0.9)";
+                ctx.fillStyle = "rgba(0, 255, 0, 0.9)";
                 ctx.beginPath();
                 ctx.arc(0, 0, 2, 0, Math.PI * 2);
                 ctx.fill();
@@ -262,7 +270,7 @@ export function MouseEffect() {
                     ctx.stroke();
 
                     // Trailing whiskers
-                    ctx.strokeStyle = `rgba(139, 92, 246, ${stretch * 0.4})`;
+                    ctx.strokeStyle = `rgba(0, 255, 0, ${stretch * 0.4})`;
                     ctx.lineWidth = 0.5;
                     ctx.beginPath();
                     ctx.moveTo(-len * 0.3, 0);
@@ -289,7 +297,7 @@ export function MouseEffect() {
                     }
 
                     // Diagonal subtle ticks
-                    ctx.strokeStyle = "rgba(139, 92, 246, 0.3)";
+                    ctx.strokeStyle = "rgba(0, 255, 0, 0.3)";
                     ctx.lineWidth = 0.5;
                     for (let i = 0; i < 4; i++) {
                         const a = (i * Math.PI) / 2 + Math.PI / 4;
@@ -327,9 +335,23 @@ export function MouseEffect() {
     }, []);
 
     return (
-        <canvas
-            ref={canvasRef}
-            className="pointer-events-none fixed inset-0 z-[999]"
-        />
+        <>
+            <motion.div
+                className="pointer-events-none fixed inset-0 z-[0] opacity-30"
+                style={{
+                    background: useMotionTemplate`
+                        radial-gradient(
+                            600px circle at ${mouseXSpring}px ${mouseYSpring}px,
+                            rgba(0, 255, 0, 0.12),
+                            transparent 80%
+                        )
+                    `,
+                }}
+            />
+            <canvas
+                ref={canvasRef}
+                className="pointer-events-none fixed inset-0 z-[999]"
+            />
+        </>
     );
 }

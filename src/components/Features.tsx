@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
+import { MouseEvent } from "react";
 
 /* ── SVG Icon Components ── */
 
@@ -72,6 +73,15 @@ interface FeatureItemProps {
 function FeatureItem({ index, title, description }: FeatureItemProps) {
     const Icon = ICONS[index % ICONS.length];
 
+    const mouseX = useMotionValue(0);
+    const mouseY = useMotionValue(0);
+
+    function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent) {
+        const { left, top } = currentTarget.getBoundingClientRect();
+        mouseX.set(clientX - left);
+        mouseY.set(clientY - top);
+    }
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -82,19 +92,33 @@ function FeatureItem({ index, title, description }: FeatureItemProps) {
                 delay: index * 0.1,
                 ease: [0.16, 1, 0.3, 1],
             }}
+            onMouseMove={handleMouseMove}
             whileHover={{ scale: 1.03 }}
-            className="group relative flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6 sm:p-8 transition-colors duration-500 hover:border-white/15 hover:bg-white/[0.04]"
+            className="group relative flex flex-col gap-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6 sm:p-8 transition-colors duration-500 hover:border-white/15 hover:bg-white/[0.04] overflow-hidden"
         >
-            {/* Hover glow */}
-            <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/0 to-violet-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 group-hover:from-indigo-500/5 group-hover:to-violet-500/5 pointer-events-none" />
+            {/* Spotlight hover glow */}
+            <motion.div
+                className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition duration-300 group-hover:opacity-100"
+                style={{
+                    background: useMotionTemplate`
+                        radial-gradient(
+                            350px circle at ${mouseX}px ${mouseY}px,
+                            rgba(0, 255, 0, 0.08),
+                            transparent 80%
+                        )
+                    `,
+                }}
+            />
+
+
 
             {/* Icon + number */}
             <div className="relative flex items-center gap-4">
-                <div className="p-2.5 rounded-xl border border-white/10 bg-white/[0.03] group-hover:border-indigo-500/20 group-hover:bg-indigo-500/[0.05] transition-all duration-500">
-                    <Icon className="w-5 h-5 text-indigo-400/70 group-hover:text-indigo-300 transition-colors duration-500" />
+                <div className="p-2.5 rounded-xl border border-white/10 bg-white/[0.03] group-hover:border-emerald-500/20 group-hover:bg-emerald-500/[0.05] transition-all duration-500">
+                    <Icon className="w-5 h-5 text-emerald-400/70 group-hover:text-emerald-400 transition-colors duration-500" />
                 </div>
                 <span className="text-[10px] font-mono tracking-widest text-zinc-600 uppercase">
-                    0{index + 1}
+                    MOD_{index + 1}
                 </span>
             </div>
 
@@ -107,7 +131,7 @@ function FeatureItem({ index, title, description }: FeatureItemProps) {
 
             {/* Bottom line reveal */}
             <motion.div
-                className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"
                 initial={{ scaleX: 0 }}
                 whileInView={{ scaleX: 1 }}
                 viewport={{ once: true }}
@@ -123,27 +147,27 @@ export function Features() {
     const features = [
         {
             title: "Vulnerability Research",
-            description: "Finds and documents vulnerabilities in real-world software, with a focus on reproducible analysis.",
+            description: "I hunt for bugs in production software — web apps, APIs, embedded systems. Every finding gets a clean writeup with steps to reproduce.",
         },
         {
             title: "Exploit Development",
-            description: "Proof-of-concept development focused on reliability, bypasses, and cross-architecture behavior.",
+            description: "I turn CVEs into working proof-of-concepts. I care about reliability, clean shellcode, and understanding why something breaks.",
         },
         {
-            title: "OSINT & Reconnaissance",
-            description: "Pipelines that monitor public repos and archives, then triage into actionable leads.",
+            title: "OSINT & Recon",
+            description: "I build automated pipelines that scrape public repos, archived pages, and leaked databases to surface actionable intel.",
         },
         {
-            title: "Cryptographic Systems",
-            description: "Built HashLock, an offline password manager with encrypted storage.",
+            title: "Cryptography",
+            description: "Fascinated by how encryption works — and how it fails. I've built my own password manager from scratch to learn by doing.",
         },
         {
-            title: "Binary Analysis",
-            description: "Static and dynamic analysis to reconstruct control flow and spot flaws.",
+            title: "Reverse Engineering",
+            description: "I spend time in disassemblers and debuggers, tracing execution paths and understanding binaries at the instruction level.",
         },
         {
-            title: "Tool Development",
-            description: "Security utilities and research helpers I use daily: API sniffers, archive miners, and exploit scaffolds.",
+            title: "Open Source Tooling",
+            description: "Everything I build for research gets released publicly. I believe good security tools should be accessible to everyone.",
         },
     ];
 
@@ -164,7 +188,7 @@ export function Features() {
                         transition={{ duration: 0.6 }}
                         className="text-xs font-mono tracking-[0.3em] uppercase text-zinc-600 mb-4 block"
                     >
-                        What I Actually Do
+                        About Me
                     </motion.span>
                     <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight">
                         <motion.span
@@ -174,16 +198,16 @@ export function Features() {
                             transition={{ duration: 0.8, delay: 0.1 }}
                             className="inline-block"
                         >
-                            CORE
+                            WHAT I
                         </motion.span>{" "}
                         <motion.span
                             initial={{ opacity: 0, y: 30 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.8, delay: 0.2 }}
-                            className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-zinc-400 to-zinc-600"
+                            className="inline-block text-emerald-500/80"
                         >
-                            WORK & SYSTEMS
+                            DO
                         </motion.span>
                     </h2>
                 </motion.div>
