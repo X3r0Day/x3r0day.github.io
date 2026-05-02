@@ -3,592 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project X3r0Day</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
-        }
-
-        *::-webkit-scrollbar {
-            display: none; /* Chrome/Safari/Opera */
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            background: #0a0a0f; 
-            color: #a1a1aa; 
-            margin: 0;
-            display: flex;
-            justify-content: center; 
-            min-height: 100vh;
-            overflow-x: hidden; 
-        }
-
-        body.sidebar-open {
-            overflow: hidden;
-        }
-
-        /* --- LAYOUT CONTAINERS --- */
-        .left-content {
-            width: 100%;
-            max-width: 800px; 
-            padding: 4rem 5vw;
-            transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.6s ease;
-        }
-
-        body.sidebar-open .left-content {
-            transform: translateX(-20vw);
-            opacity: 0.3;
-            pointer-events: none; 
-        }
-
-        /* --- SIDEBAR CONTAINER --- */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            right: 0;
-            width: 45vw;
-            min-width: 450px;
-            max-width: 700px;
-            height: 100vh;
-            background: #050508; 
-            border-left: 1px dashed #1f1f2e; 
-            padding: 4rem;
-            transform: translateX(100%); 
-            transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            box-shadow: -10px 0 40px rgba(0,0,0,0.6);
-        }
-
-        body.sidebar-open .sidebar {
-            transform: translateX(0);
-        }
-
-        .sidebar-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            opacity: 0.4;
-            pointer-events: none; 
-        }
-
-        /* --- MAIN TITLE ANIMATIONS --- */
-        @keyframes appearSlash {
-            0% { opacity: 0; transform: scale(0.8) translateX(-10px); }
-            100% { opacity: 1; transform: scale(1) translateX(0); }
-        }
-
-        @keyframes slideFromSlash {
-            0% { opacity: 0; clip-path: inset(-20px 100% -20px -20px); transform: translateX(-15px); }
-            100% { opacity: 1; clip-path: inset(-20px -20px -20px -20px); transform: translateX(0); }
-        }
-
-        header { margin-bottom: 3rem; }
-
-        .title-wrapper { display: flex; align-items: center; margin-bottom: 0.75rem; }
-
-        .title-slash {
-            font-size: 2.2rem; font-weight: 800; color: #00d26a; 
-            margin-right: 0.4rem; opacity: 0;
-            animation: appearSlash 0.5s ease-out forwards;
-        }
-
-        .title-emerge {
-            font-size: 2.2rem; font-weight: 800; color: #f3f4f6; 
-            letter-spacing: -0.02em; opacity: 0;
-            animation: slideFromSlash 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-            animation-delay: 0.3s;
-        }
-
-        header p { color: #8892b0; font-size: 1rem; }
-
-        /* --- HEADER GITHUB LINK --- */
-        .header-links {
-            margin-top: 1.5rem;
-            opacity: 0;
-            animation: slideUpFade 0.6s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-            animation-delay: 0.5s; /* Appears shortly after the title */
-        }
-
-        .github-link {
-            display: inline-flex; align-items: center; gap: 0.6rem;
-            padding: 0.6rem 1.2rem; background: #111116; 
-            border: 1px solid #1f1f2e; color: #00d26a; 
-            text-decoration: none; font-family: ui-monospace, SFMono-Regular, monospace;
-            font-size: 0.85rem; border-radius: 4px; transition: all 0.2s;
-        }
-
-        .github-link svg {
-            width: 18px; height: 18px; fill: currentColor;
-        }
-
-        .github-link:hover {
-            border-color: #00d26a; background: rgba(0, 210, 106, 0.05);
-            box-shadow: 0 0 15px rgba(0, 210, 106, 0.2);
-            color: #33ff99;
-        }
-
-        /* --- SECTIONS --- */
-        .about-me {
-            margin-bottom: 3rem; padding: 1.5rem; background: #111116; 
-            border: 1px solid #1f1f2e; border-left: 3px solid #00d26a; 
-            border-radius: 4px; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .about-me h2, .section-block h2, .contact h2 {
-            font-size: 1.2rem; margin-bottom: 0.75rem; font-weight: 600; color: #e5e7eb;
-        }
-
-        /* --- TOOL & BUILD BLOCKS --- */
-        .section-block { margin-bottom: 3rem; }
-        .section-intro { margin-bottom: 2rem; font-size: 0.95rem; color: #8892b0; }
-        .section-block ul { list-style: none; display: flex; flex-direction: column; gap: 1.25rem; }
-
-        .item-block {
-            padding: 1.5rem; background: #111116; border: 1px solid #1f1f2e; 
-            border-left: 3px solid #2a2a35; border-radius: 6px;
-            display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem;
-            transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-
-        .item-block:hover {
-            border-left: 3px solid #00d26a; background: #14141a;
-            transform: translateX(4px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-        }
-
-        .item-title {
-            color: #e5e7eb; font-weight: 700; font-size: 1.1rem;
-            font-family: ui-monospace, SFMono-Regular, monospace;
-        }
-
-        .item-desc { color: #8892b0; font-size: 0.95rem; line-height: 1.5; }
-
-        .item-links { margin-top: 0.5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
-
-        .item-links a {
-            color: #00d26a; text-decoration: none; font-size: 0.85rem;
-            font-family: ui-monospace, SFMono-Regular, monospace;
-            letter-spacing: 0.05em; transition: color 0.2s ease, text-shadow 0.2s ease;
-        }
-
-        .item-links a:hover { color: #33ff99; text-shadow: 0 0 8px rgba(0, 210, 106, 0.4); }
-
-        .item-links a.learn-more { color: #f3f4f6; }
-        .item-links a.learn-more:hover { color: #fff; text-shadow: 0 0 8px rgba(255, 255, 255, 0.4); }
-
-        /* --- CONTACT & FOOTER --- */
-        .contact { margin-top: 3rem; padding-top: 2rem; border-top: 1px dashed #1f1f2e; }
-        .contact p { margin-bottom: 0.5rem; }
-        .contact a { color: #00d26a; text-decoration: none; font-weight: 500; }
-        .contact a:hover { text-decoration: underline; text-shadow: 0 0 8px rgba(0, 210, 106, 0.4); }
-        footer { margin-top: 3rem; padding-top: 1.5rem; font-size: 0.85rem; color: #6b7280; text-align: left; }
-
-        /* --- SIDEBAR INFO CONTENT --- */
-        .close-btn {
-            position: relative; z-index: 10;
-            background: none; border: none; color: #8892b0;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 0.9rem; cursor: pointer; margin-bottom: 2rem;
-            align-self: flex-start; transition: color 0.2s;
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        .close-btn:hover { color: #00d26a; }
-        
-        .info-content {
-            position: relative; z-index: 10;
-            display: flex; flex-direction: column; gap: 1.5rem;
-        }
-
-        .info-content h2 {
-            font-size: 2rem; color: #f3f4f6;
-            font-family: ui-monospace, SFMono-Regular, monospace; line-height: 1.2;
-        }
-
-        .info-content .badge {
-            display: inline-block; background: rgba(0, 210, 106, 0.1);
-            color: #00d26a; padding: 0.2rem 0.6rem; border-radius: 4px;
-            font-size: 0.75rem; font-family: monospace;
-            border: 1px solid rgba(0, 210, 106, 0.2); width: fit-content;
-        }
-
-        .info-content .badge.live {
-            background: rgba(239, 68, 68, 0.1); /* Redish for LIVE */
-            color: #ef4444;
-            border-color: rgba(239, 68, 68, 0.2);
-        }
-
-        .info-content p { color: #a1a1aa; font-size: 1.05rem; line-height: 1.7; }
-        .info-content h3 {
-            color: #e5e7eb; font-size: 1.1rem; margin-top: 1rem;
-            border-bottom: 1px dashed #1f1f2e; padding-bottom: 0.5rem;
-        }
-
-        .info-content ul { list-style: none; padding-left: 0.5rem; }
-        .info-content li {
-            position: relative; padding-left: 1.5rem; margin-bottom: 0.8rem;
-            color: #8892b0; font-size: 0.95rem;
-        }
-        .info-content li::before {
-            content: '>'; position: absolute; left: 0; color: #00d26a;
-            font-family: monospace; font-weight: bold;
-        }
-
-        .info-actions { margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap; }
-        .info-actions a {
-            padding: 0.75rem 1.5rem; background: #111116; border: 1px solid #1f1f2e;
-            color: #00d26a; text-decoration: none; font-family: ui-monospace, SFMono-Regular, monospace;
-            font-size: 0.85rem; border-radius: 4px; transition: all 0.2s;
-        }
-        .info-actions a:hover {
-            border-color: #00d26a; background: rgba(0, 210, 106, 0.05);
-            box-shadow: 0 0 12px rgba(0, 210, 106, 0.15);
-        }
-        .info-actions a.live-btn {
-            color: #ef4444;
-            border-color: #3f1e1e;
-        }
-        .info-actions a.live-btn:hover {
-            border-color: #ef4444; background: rgba(239, 68, 68, 0.05);
-            box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
-        }
-
-        /* Content slide-up animation */
-        @keyframes slideUpFade {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        body.sidebar-open .info-content > * {
-            animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; opacity: 0;
-        }
-        body.sidebar-open .info-content > *:nth-child(1) { animation-delay: 0.2s; }
-        body.sidebar-open .info-content > *:nth-child(2) { animation-delay: 0.3s; }
-        body.sidebar-open .info-content > *:nth-child(3) { animation-delay: 0.4s; }
-        body.sidebar-open .info-content > *:nth-child(4) { animation-delay: 0.5s; }
-        body.sidebar-open .info-content > *:nth-child(5) { animation-delay: 0.6s; }
-
-        /* Animation Keyframes for Sidebar Art */
-        .art-node { opacity: 0; animation: fadeInNode 0.5s ease-out forwards; }
-        .node-1 { animation-delay: 0.8s; } .node-2 { animation-delay: 1.4s; }
-        .node-3 { animation-delay: 1.8s; } .node-4 { animation-delay: 2.3s; }
-        .node-5 { animation-delay: 2.9s; }
-        .art-path { stroke-dasharray: 2000; stroke-dashoffset: 2000; animation: drawPath 4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; animation-delay: 0.6s; }
-        .art-ping { opacity: 0; animation: pingNode 3s infinite; animation-delay: 2s; }
-
-        @keyframes fadeInNode { to { opacity: 1; } }
-        @keyframes drawPath { to { stroke-dashoffset: 0; } }
-        @keyframes pingNode { 0% { r: 6; opacity: 0.6; stroke-width: 2px; } 100% { r: 60; opacity: 0; stroke-width: 0.5px; } }
-
-        /* Responsive */
-        @media (max-width: 1100px) {
-            body.sidebar-open .left-content { transform: translateX(0); }
-            .sidebar { width: 100%; max-width: 100%; padding: 3rem 2rem; }
-        }
-    </style>
+    <title>X3r0Day OS 95</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    
+    <!-- DESKTOP ICONS -->
+    <div class="desktop" id="desktop">
+        <div class="icon-item" ondblclick="openApp('win-main')">
+            <span class="emoji-icon">📁</span>
+            <span class="label">My Arsenal</span>
+        </div>
+        <div class="icon-item" ondblclick="alert('Recycle Bin is empty.')">
+            <span class="emoji-icon">🗑️</span>
+            <span class="label">Recycle Bin</span>
+        </div>
+        <div class="icon-item" ondblclick="window.open('https://github.com/X3r0Day', '_blank')">
+            <span class="emoji-icon">🌐</span>
+            <span class="label">GitHub</span>
+        </div>
+    </div>
 
-    <div class="left-content">
-        <header>
-            <div class="title-wrapper">
-                <span class="title-slash">/</span>
-                <h1 class="title-emerge">Project X3r0Day</h1>
+    <!-- MAIN FOLDER WINDOW -->
+    <div class="window outset" id="win-main">
+        <div class="title-bar" onmousedown="dragWindow(event, 'win-main')">
+            <div class="title-text"><span style="font-size:16px;">📁</span> C:\X3r0Day\Arsenal</div>
+            <div class="title-controls">
+                <button class="btn-ctrl" onclick="minimizeApp('win-main')">_</button>
+                <button class="btn-ctrl" onclick="maximize('win-main', this)">◻</button>
+                <button class="btn-ctrl" onclick="closeApp('win-main')">X</button>
             </div>
-            <p>Open-source tools for auditing networks and systems.</p>
+        </div>
+        <div class="menu-bar">
+            <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+        </div>
+        <div class="window-content inset">
             
-            <!-- NEW: Animated GitHub Profile Link -->
-            <div class="header-links">
-                <a href="https://github.com/X3r0Day" target="_blank" rel="noopener noreferrer" class="github-link">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-                    </svg>
-                    [ GITHUB PROFILE ]
-                </a>
+            <div class="icon-item app-icon" data-tool="camsnipe">
+                <span class="emoji-icon">👁️</span>
+                <span class="label">CamSnipe</span>
             </div>
-        </header>
+            
+            <div class="icon-item app-icon" data-tool="webshame">
+                <span class="emoji-icon">🔑</span>
+                <span class="label">WebShame</span>
+            </div>
 
-        <section class="about-me">
-            <h2>About Me</h2>
-            <p>I build security tools and very much into offensive security. Here are some of my projects meant for offensive and defensive purposes.</p>
-        </section>
+            <div class="icon-item app-icon" data-tool="sniffer">
+                <span class="emoji-icon">🕷️</span>
+                <span class="label">API Sniffer</span>
+            </div>
 
-        <!-- LIVE BUILDS SECTION -->
-        <section class="section-block">
-            <h2>Live Builds</h2>
-            <p class="section-intro">Active web projects you can checkout.</p>
-            <ul>
-                <li class="item-block">
-                    <strong class="item-title">CamSnipe Hub</strong>
-                    <span class="item-desc">Online public IP camera streams directory.</span>
-                    <div class="item-links">
-                        <a href="#" class="learn-more" data-tool="camsnipe">[LEARN MORE]</a>
-                        <a href="https://camsnipe-hub-ipym.onrender.com/" target="_blank">[OPEN LIVE APP]</a> 
-                    </div>
-                </li>
-                <li class="item-block">
-                    <strong class="item-title">WebShame</strong>
-                    <span class="item-desc">Archive of leaked secrets pushed to public GitHub repositories.</span>
-                    <div class="item-links">
-                        <a href="#" class="learn-more" data-tool="webshame">[LEARN MORE]</a>
-                        <a href="https://x3r0day.me/WebShame/" target="_blank">[OPEN LIVE APP]</a> 
-                    </div>
-                </li>
-            </ul>
-        </section>
+            <div class="icon-item app-icon" data-tool="hashlock">
+                <span class="emoji-icon">🔐</span>
+                <span class="label">HashLock</span>
+            </div>
 
-        <!-- TOOLS SECTION -->
-        <section class="section-block">
-            <h2>Open Sourced Tools</h2>
-            <p class="section-intro">Some of my open sourced security tools. You may like some of them.</p>
-            <ul>
-                <li class="item-block">
-                    <strong class="item-title">X3r0Day API Sniffer</strong>
-                    <span class="item-desc">GitHub secret scanner for keys and credentials.</span>
-                    <div class="item-links">
-                        <a href="#" class="learn-more" data-tool="sniffer">[LEARN MORE]</a>
-                        <a href="https://github.com/X3r0Day/XeroDay-APISniffer" target="_blank">[SOURCE CODE]</a>
-                    </div>
-                </li>
-                <li class="item-block">
-                    <strong class="item-title">HashLock Password Manager</strong>
-                    <span class="item-desc">Offline encrypted password manager with GUI.</span>
-                    <div class="item-links">
-                        <a href="#" class="learn-more" data-tool="hashlock">[LEARN MORE]</a>
-                        <a href="https://github.com/X3r0Day/HashLock/releases" target="_blank">[DOWNLOAD]</a> 
-                        <a href="https://github.com/X3r0Day/HashLock" target="_blank">[SOURCE CODE]</a>
-                    </div>
-                </li>
-                <li class="item-block">
-                    <strong class="item-title">Specter</strong>
-                    <span class="item-desc">Blazing fast subdomain and port scanner.</span>
-                    <div class="item-links">
-                        <a href="#" class="learn-more" data-tool="specter">[LEARN MORE]</a>
-                        <a href="https://github.com/X3r0Day/X3r0Day-Specter" target="_blank">[SOURCE CODE]</a>
-                    </div>
-                </li>
-                <li class="item-block">
-                    <strong class="item-title">InformationDisclosure</strong>
-                    <span class="item-desc">Web Archive scraper for exposed files.</span>
-                    <div class="item-links">
-                        <a href="#" class="learn-more" data-tool="infodisc">[LEARN MORE]</a>
-                        <a href="https://github.com/X3r0Day/InformationDisclosure" target="_blank">[SOURCE CODE]</a>
-                    </div>
-                </li>
-            </ul>
-        </section>
+            <div class="icon-item app-icon" data-tool="specter">
+                <span class="emoji-icon">⚡</span>
+                <span class="label">Specter</span>
+            </div>
 
-        <section class="contact">
-            <h2>Contact</h2>
-            <p>Questions? <a href="mailto:cr4n@duck.com">cr4n@duck.com</a></p>
-            <p>Follow my work: <a href="https://github.com/X3r0Day" target="_blank" rel="noopener noreferrer">github.com/X3r0Day</a></p>
-        </section>
+            <div class="icon-item app-icon" data-tool="infodisc">
+                <span class="emoji-icon">🗄️</span>
+                <span class="label">InfoDisc</span>
+            </div>
 
-        <footer>
-            <p>Only use these tools on systems you own or have permission to test.</p>
-        </footer>
+        </div>
     </div>
 
-    <!-- FIXED SLIDE-IN SIDEBAR -->
-    <div class="sidebar" id="sidebar">
-        <!-- Abstract Art as faint background inside the sidebar -->
-        <div class="sidebar-bg">
-            <svg width="100%" height="100%" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice">
-                <defs>
-                    <pattern id="dotGrid" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                        <circle cx="2" cy="2" r="1.5" fill="#1f1f2e" /> 
-                    </pattern>
-                    <linearGradient id="fadeFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stop-color="#00d26a" stop-opacity="0.1" />
-                        <stop offset="100%" stop-color="#00d26a" stop-opacity="0" />
-                    </linearGradient>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#dotGrid)" />
-                <g transform="translate(150, 250)">
-                    <path d="M 100 100 L 350 250 L 550 120 L 450 450 L 150 380 Z" fill="url(#fadeFill)" />
-                    <path class="art-path" d="M 100 100 L 350 250 L 550 120 L 450 450 L 150 380 Z" stroke="#00d26a" stroke-width="1.5" fill="none" />
-                    <path class="art-path" d="M 100 100 L 550 120 M 350 250 L 150 380" stroke="#2a2a35" stroke-width="1" fill="none" stroke-dasharray="4 4"/>
-                    <circle cx="100" cy="100" r="5" fill="#0a0a0f" stroke="#00d26a" stroke-width="2" class="art-node node-1"/>
-                    <circle cx="350" cy="250" r="7" fill="#0a0a0f" stroke="#00d26a" stroke-width="2" class="art-node node-2"/>
-                    <circle cx="550" cy="120" r="4.5" fill="#0a0a0f" stroke="#00d26a" stroke-width="2" class="art-node node-3"/>
-                    <circle cx="450" cy="450" r="6" fill="#0a0a0f" stroke="#00d26a" stroke-width="2" class="art-node node-4"/>
-                    <circle cx="150" cy="380" r="5" fill="#0a0a0f" stroke="#00d26a" stroke-width="2" class="art-node node-5"/>
-                    <circle cx="350" cy="250" r="7" fill="none" stroke="#00d26a" stroke-width="1" class="art-ping" />
-                </g>
-            </svg>
+    <!-- DETAILS PROGRAM WINDOW -->
+    <div class="window outset" id="win-details">
+        <div class="title-bar" onmousedown="dragWindow(event, 'win-details')">
+            <div class="title-text"><span id="det-icon" style="font-size:16px;">⚙️</span> <span id="det-title-bar">Program.exe</span></div>
+            <div class="title-controls">
+                <button class="btn-ctrl" onclick="minimizeApp('win-details')">_</button>
+                <button class="btn-ctrl" onclick="maximize('win-details', this)">◻</button>
+                <button class="btn-ctrl" onclick="closeApp('win-details')">X</button>
+            </div>
         </div>
+        <div class="menu-bar">
+            <span>File</span><span>Options</span><span>Help</span>
+        </div>
+        <div class="window-content inset" id="det-content">
+            <!-- Content injected via JS -->
+        </div>
+    </div>
 
-        <button class="close-btn" id="close-sidebar">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            CLOSE
+    <!-- TASKBAR -->
+    <div class="taskbar outset">
+        <button class="start-btn btn-outset" onclick="alert('X3r0Day OS v95. Operating normally.')">
+            <span style="font-size:18px;">🪟</span> <span style="font-style:italic; padding-right:5px;">Start</span>
         </button>
-
-        <div class="info-content" id="info-content">
-            <!-- Content injected dynamically -->
+        <div class="divider"></div>
+        <div class="task-tabs" id="task-tabs">
+            <div class="task-tab outset active" id="tab-win-main" onclick="toggleApp('win-main')">
+                <span style="font-size:14px;">📁</span> Arsenal
+            </div>
+            <div class="task-tab outset active" id="tab-win-details" style="display:none;" onclick="toggleApp('win-details')">
+                <span style="font-size:14px;" id="tab-det-icon">⚙️</span> <span id="tab-det-title">Program.exe</span>
+            </div>
+        </div>
+        <div class="tray inset" id="clock">
+            12:00 PM
         </div>
     </div>
 
-    <script>
-        const projectData = {
-            // Live Builds
-            camsnipe: {
-                isLive: true,
-                title: "CamSnipe Hub",
-                badgeText: "Cams on your clicks.",
-                desc: "An online directory and real-time feed mapping exposed, misconfigured, or inherently public IP camera streams across the internet. Built for security awareness and research.",
-                features:[
-                    "Live stream aggregation without authentication walls",
-                    "Device fingerprinting and manufacturer identification",
-                    "ISP, Long, Lang, Country metadata about IP Cams",
-                ],
-                url: "https://camsnipe-hub-ipym.onrender.com/"
-            },
-            webshame: {
-                isLive: true,
-                title: "WebShame",
-                badgeText: "Did someone say Free API keys????",
-                desc: "A constantly updating wall of shame showing live, real-world examples of sensitive secrets (API keys, AWS credentials, JWTs) accidentally pushed to public GitHub repositories.",
-                features:[
-                    "Real-time GitHub scanner for exposed secrets",
-                    "Powered by Hall of Shame leaderboard",
-                    "Displays all leaked repos",
-                    "Displays users with the most leaks lol",
-                ],
-                url: "https://x3r0day.me/WebShame/"
-            },
-
-            // Offline Tools
-            sniffer: {
-                isLive: false,
-                title: "X3r0Day API Sniffer",
-                badgeText: "STABLE RELEASE // v2.0",
-                desc: "An advanced, multi-threaded secret scanner specifically designed to find leaked API keys, tokens, and credentials across public and private GitHub repositories before adversaries do.",
-                features:[
-                    "Regex-based heuristic scanning for 60+ key types",
-                    "Supports GitHub Enterprise environments",
-                    "Low false-positive rate via entropy analysis"
-                ],
-                githubUrl: "https://github.com/X3r0Day/XeroDay-APISniffer"
-            },
-            hashlock: {
-                isLive: false,
-                title: "HashLock Password Manager",
-                badgeText: "STABLE RELEASE",
-                desc: "A fully offline, military-grade encrypted password manager. Built natively for security professionals who absolutely refuse to trust cloud synchronization.",
-                features:[
-                    "Fernet cryptographic encryption",
-                    "Zero network requests made",
-                    "Portable encrypted vault file"
-                ],
-                githubUrl: "https://github.com/X3r0Day/HashLock"
-            },
-            specter: {
-                isLive: false,
-                title: "Specter",
-                badgeText: "BETA RELEASE // v0.1.0",
-                desc: "A blazing fast subdomain enumeration and port scanning tool. Specter uses asynchronous I/O to map out an organization's entire external infrastructure footprint in seconds.",
-                features:[
-                    "Blazing fast TCP port scanning with asyncio",
-                    "Asynchronous TCP SYN port scanning",
-                    "Wordlist subdomain bruteforce",
-                    "JSON, CSV, HTML export"
-                ],
-                githubUrl: "https://github.com/X3r0Day/X3r0Day-Specter",
-                install:`
-From GitHub:<br>
-<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0 1rem;border-radius:4px;color:#00d26a;">pipx install git+https://github.com/x3r0day/x3r0day-specter.git</code>
-Arch Linux / VCS:<br>
-<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0;border-radius:4px;color:#00d26a;">yay -S specter</code>
-<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0 1rem;border-radius:4px;color:#00d26a;">yay -S specter-git</code>`
-            },
-            infodisc: {
-                isLive: false,
-                title: "InformationDisclosure",
-                badgeText: "STABLE RELEASE",
-                desc: "An automated Web Archive (Wayback Machine) scraper that hunts down exposed configuration files, database backups, and deprecated endpoints that developers forgot about.",
-                features:[
-                    "Direct Wayback CDX API integration",
-                    "Pattern matching for sensitive extensions (.env, .bak, .sql)",
-                    "Sorts each results into their specific extension files.",
-                    "Custom file extensions and keywords can be added for scanning."
-                ],
-                githubUrl: "https://github.com/X3r0Day/InformationDisclosure"
-            }
-        };
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const learnMoreBtns = document.querySelectorAll('.learn-more');
-            const closeBtn = document.getElementById('close-sidebar');
-            const infoContent = document.getElementById('info-content');
-
-            // Open Sidebar
-            learnMoreBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault(); 
-                    e.stopPropagation(); 
-                    
-                    const toolKey = btn.getAttribute('data-tool');
-                    const data = projectData[toolKey];
-                    
-                    if(data) {
-                        infoContent.innerHTML = '';
-                        void infoContent.offsetWidth; 
-
-                        // Determine dynamic action buttons based on project type
-                        let actionButtons = '';
-                        if (data.isLive) {
-                            actionButtons = `<a href="${data.url}" target="_blank" class="live-btn">[OPEN LIVE APP]</a>`;
-                        } else {
-                            actionButtons = `
-                                <a href="${data.githubUrl ? data.githubUrl + '/releases' : '#'}" target="_blank">[DOWNLOAD]</a>
-                                <a href="${data.githubUrl || '#'}" target="_blank">[SOURCE CODE]</a>
-                            `;
-                        }
-                        
-                        infoContent.innerHTML = `
-                            <span class="badge ${data.isLive ? 'live' : ''}">${data.badgeText}</span>
-                            <h2>${data.title}</h2>
-                            <p>${data.desc}</p>
-                            <h3>Key Features</h3>
-                            <ul>
-                                ${data.features.map(f => `<li>${f}</li>`).join('')}
-                            </ul>
-                            ${data.install ? `<h3>Install</h3><p>${data.install}</p>` : ''}
-                            <div class="info-actions">
-                                ${actionButtons}
-                            </div>
-                        `;
-                        
-                        document.body.classList.add('sidebar-open');
-                    }
-                });
-            });
-
-            // Close Sidebar (X button)
-            if (closeBtn) {
-                closeBtn.addEventListener('click', () => {
-                    document.body.classList.remove('sidebar-open');
-                });
-            }
-
-            // Close sidebar when clicking outside
-            document.querySelector('.left-content').addEventListener('click', () => {
-                if(document.body.classList.contains('sidebar-open')) {
-                    document.body.classList.remove('sidebar-open');
-                }
-            });
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
