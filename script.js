@@ -50,8 +50,6 @@ function updateClock() {
     minutes = minutes < 10 ? '0' + minutes : minutes;
     document.getElementById('clock').innerText = hours + ':' + minutes + ' ' + ampm;
 }
-setInterval(updateClock, 1000);
-updateClock();
 
 // --- WINDOW MANAGEMENT ---
 let highestZ = 100;
@@ -162,8 +160,12 @@ function dragWindow(e, id) {
 
 // --- ICON DOUBLE CLICK LOGIC ---
 document.addEventListener('DOMContentLoaded', () => {
+    // Start clock
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Icon click/dblclick handlers
     document.querySelectorAll('.app-icon').forEach(icon => {
-        // Desktop icons need single click select
         icon.addEventListener('click', () => {
             document.querySelectorAll('.app-icon').forEach(i => i.classList.remove('selected'));
             icon.classList.add('selected');
