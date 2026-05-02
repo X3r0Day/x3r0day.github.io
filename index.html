@@ -348,8 +348,7 @@
                     <span class="item-desc">GitHub secret scanner for keys and credentials.</span>
                     <div class="item-links">
                         <a href="#" class="learn-more" data-tool="sniffer">[LEARN MORE]</a>
-                        <a href="#">[DOWNLOAD]</a> 
-                        <a href="#">[SOURCE CODE]</a>
+                        <a href="https://github.com/X3r0Day/XeroDay-APISniffer" target="_blank">[SOURCE CODE]</a>
                     </div>
                 </li>
                 <li class="item-block">
@@ -357,8 +356,8 @@
                     <span class="item-desc">Offline encrypted password manager with GUI.</span>
                     <div class="item-links">
                         <a href="#" class="learn-more" data-tool="hashlock">[LEARN MORE]</a>
-                        <a href="#">[DOWNLOAD]</a> 
-                        <a href="#">[SOURCE CODE]</a>
+                        <a href="https://github.com/X3r0Day/HashLock/releases" target="_blank">[DOWNLOAD]</a> 
+                        <a href="https://github.com/X3r0Day/HashLock" target="_blank">[SOURCE CODE]</a>
                     </div>
                 </li>
                 <li class="item-block">
@@ -366,8 +365,7 @@
                     <span class="item-desc">Blazing fast subdomain and port scanner.</span>
                     <div class="item-links">
                         <a href="#" class="learn-more" data-tool="specter">[LEARN MORE]</a>
-                        <a href="#">[DOWNLOAD]</a> 
-                        <a href="#">[SOURCE CODE]</a>
+                        <a href="https://github.com/X3r0Day/X3r0Day-Specter" target="_blank">[SOURCE CODE]</a>
                     </div>
                 </li>
                 <li class="item-block">
@@ -375,8 +373,7 @@
                     <span class="item-desc">Web Archive scraper for exposed files.</span>
                     <div class="item-links">
                         <a href="#" class="learn-more" data-tool="infodisc">[LEARN MORE]</a>
-                        <a href="#">[DOWNLOAD]</a> 
-                        <a href="#">[SOURCE CODE]</a>
+                        <a href="https://github.com/X3r0Day/InformationDisclosure" target="_blank">[SOURCE CODE]</a>
                     </div>
                 </li>
             </ul>
@@ -466,50 +463,61 @@
             sniffer: {
                 isLive: false,
                 title: "X3r0Day API Sniffer",
-                badgeText: "STABLE RELEASE // v2.1.4",
+                badgeText: "STABLE RELEASE // v2.0",
                 desc: "An advanced, multi-threaded secret scanner specifically designed to find leaked API keys, tokens, and credentials across public and private GitHub repositories before adversaries do.",
                 features:[
                     "Regex-based heuristic scanning for 100+ key types",
                     "Supports GitHub Enterprise environments",
                     "Automated webhook alerts for instant notifications",
                     "Low false-positive rate via entropy analysis"
-                ]
+                ],
+                githubUrl: "https://github.com/X3r0Day/XeroDay-APISniffer"
             },
             hashlock: {
                 isLive: false,
                 title: "HashLock Password Manager",
-                badgeText: "STABLE RELEASE // v1.0.8",
+                badgeText: "STABLE RELEASE",
                 desc: "A fully offline, military-grade encrypted password manager. Built natively for security professionals who absolutely refuse to trust cloud synchronization.",
                 features:[
                     "AES-256-GCM encryption architecture",
                     "Zero network requests—100% air-gapped capability",
                     "Self-destruct sequence on 10 failed attempts",
                     "Portable encrypted vault file"
-                ]
+                ],
+                githubUrl: "https://github.com/X3r0Day/HashLock"
             },
             specter: {
                 isLive: false,
                 title: "Specter",
-                badgeText: "STABLE RELEASE // v3.0.0",
+                badgeText: "BETA RELEASE // v0.1.0",
                 desc: "A blazing fast subdomain enumeration and port scanning tool. Specter uses asynchronous I/O to map out an organization's entire external infrastructure footprint in seconds.",
                 features:[
                     "Asynchronous TCP SYN port scanning",
                     "Certificate transparency log scraping",
                     "Custom DNS mutation & wordlist generation",
                     "JSON and CSV pipeline export"
-                ]
+                ],
+                githubUrl: "https://github.com/X3r0Day/X3r0Day-Specter",
+                install: `Pipx (Local):<br>
+<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0 1rem;border-radius:4px;color:#00d26a;">pipx install .</code>
+From GitHub:<br>
+<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0 1rem;border-radius:4px;color:#00d26a;">pipx install git+https://github.com/x3r0day/x3r0day-specter.git</code>
+Arch Linux / VCS:<br>
+<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0;border-radius:4px;color:#00d26a;">yay -S specter</code>
+<code style="display:block;background:#1a1a24;padding:0.5rem;margin:0.2rem 0 1rem;border-radius:4px;color:#00d26a;">yay -S specter-git</code>`
             },
             infodisc: {
                 isLive: false,
                 title: "InformationDisclosure",
-                badgeText: "STABLE RELEASE // v1.4.2",
+                badgeText: "STABLE RELEASE",
                 desc: "An automated Web Archive (Wayback Machine) scraper that hunts down exposed configuration files, database backups, and deprecated endpoints that developers forgot about.",
                 features:[
                     "Direct Wayback CDX API integration",
                     "Pattern matching for sensitive extensions (.env, .bak, .sql)",
                     "Historical diffing across page revisions",
                     "Proxy rotation support for rate-limit evasion"
-                ]
+                ],
+                githubUrl: "https://github.com/X3r0Day/InformationDisclosure"
             }
         };
 
@@ -537,8 +545,8 @@
                             actionButtons = `<a href="${data.url}" target="_blank" class="live-btn">[OPEN LIVE APP]</a>`;
                         } else {
                             actionButtons = `
-                                <a href="#">[DOWNLOAD]</a>
-                                <a href="#">[SOURCE CODE]</a>
+                                <a href="${data.githubUrl ? data.githubUrl + '/releases' : '#'}" target="_blank">[DOWNLOAD]</a>
+                                <a href="${data.githubUrl || '#'}" target="_blank">[SOURCE CODE]</a>
                             `;
                         }
                         
@@ -550,6 +558,7 @@
                             <ul>
                                 ${data.features.map(f => `<li>${f}</li>`).join('')}
                             </ul>
+                            ${data.install ? `<h3>Install</h3><p>${data.install}</p>` : ''}
                             <div class="info-actions">
                                 ${actionButtons}
                             </div>
