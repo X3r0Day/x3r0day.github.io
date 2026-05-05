@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>X3r0Day OS 95</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
     
-    <!-- DESKTOP ICONS -->
     <div class="desktop" id="desktop">
         <div class="icon-item" ondblclick="openApp('win-main')">
             <span class="emoji-icon">📁</span>
             <span class="label">My Arsenal</span>
+        </div>
+        <div class="icon-item" ondblclick="openApp('win-writeups')">
+            <span class="emoji-icon">📝</span>
+            <span class="label">Writeups</span>
         </div>
         <div class="icon-item" ondblclick="alert('Recycle Bin is empty.')">
             <span class="emoji-icon">🗑️</span>
@@ -24,7 +28,6 @@
         </div>
     </div>
 
-    <!-- MAIN FOLDER WINDOW -->
     <div class="window outset" id="win-main">
         <div class="title-bar" onmousedown="dragWindow(event, 'win-main')">
             <div class="title-text"><span style="font-size:16px;">📁</span> C:\X3r0Day\Arsenal</div>
@@ -72,7 +75,6 @@
         </div>
     </div>
 
-    <!-- DETAILS PROGRAM WINDOW -->
     <div class="window outset" id="win-details">
         <div class="title-bar" onmousedown="dragWindow(event, 'win-details')">
             <div class="title-text"><span id="det-icon" style="font-size:16px;">⚙️</span> <span id="det-title-bar">Program.exe</span></div>
@@ -86,11 +88,41 @@
             <span>File</span><span>Options</span><span>Help</span>
         </div>
         <div class="window-content inset" id="det-content">
-            <!-- Content injected via JS -->
         </div>
     </div>
 
-    <!-- TASKBAR -->
+    <div class="window outset" id="win-writeups" style="display:none; top: 100px; left: 150px;">
+        <div class="title-bar" onmousedown="dragWindow(event, 'win-writeups')">
+            <div class="title-text"><span style="font-size:16px;">📁</span> C:\X3r0Day\Writeups</div>
+            <div class="title-controls">
+                <button class="btn-ctrl" onclick="minimizeApp('win-writeups')">_</button>
+                <button class="btn-ctrl" onclick="maximize('win-writeups', this)">◻</button>
+                <button class="btn-ctrl" onclick="closeApp('win-writeups')">X</button>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span>File</span><span>Edit</span><span>View</span><span>Help</span>
+        </div>
+        <div class="window-content inset" id="writeups-list">
+        </div>
+    </div>
+>
+    <div class="window outset" id="win-notepad" style="display:none; top: 120px; left: 200px; width: 600px; height: 500px; resize: both; overflow: auto;">
+        <div class="title-bar" onmousedown="dragWindow(event, 'win-notepad')">
+            <div class="title-text"><span style="font-size:16px;">📝</span> <span id="notepad-title-bar">Notepad</span></div>
+            <div class="title-controls">
+                <button class="btn-ctrl" onclick="minimizeApp('win-notepad')">_</button>
+                <button class="btn-ctrl" onclick="maximize('win-notepad', this)">◻</button>
+                <button class="btn-ctrl" onclick="closeApp('win-notepad')">X</button>
+            </div>
+        </div>
+        <div class="menu-bar">
+            <span>File</span><span>Edit</span><span>Search</span><span>Help</span>
+        </div>
+        <div class="inset" id="notepad-content" style="flex-grow: 1; margin: 4px; background: white; overflow-y: auto; padding: 15px; font-family: 'Courier New', monospace; font-size: 14px; user-select: text; display: block;">
+        </div>
+    </div>
+
     <div class="taskbar outset">
         <button class="start-btn btn-outset" onclick="alert('X3r0Day OS v95. Operating normally.')">
             <span style="font-size:18px;">🪟</span> <span style="font-style:italic; padding-right:5px;">Start</span>
@@ -102,6 +134,12 @@
             </div>
             <div class="task-tab outset active" id="tab-win-details" style="display:none;" onclick="toggleApp('win-details')">
                 <span style="font-size:14px;" id="tab-det-icon">⚙️</span> <span id="tab-det-title">Program.exe</span>
+            </div>
+            <div class="task-tab outset active" id="tab-win-writeups" style="display:none;" onclick="toggleApp('win-writeups')">
+                <span style="font-size:14px;">📁</span> Writeups
+            </div>
+            <div class="task-tab outset active" id="tab-win-notepad" style="display:none;" onclick="toggleApp('win-notepad')">
+                <span style="font-size:14px;">📝</span> <span id="tab-notepad-title">Notepad</span>
             </div>
         </div>
         <div class="tray inset" id="clock">

@@ -23,7 +23,6 @@ body {
     user-select: none;
 }
 
-/* Border Utilities */
 .outset {
     background: var(--win-bg);
     border-top: 2px solid var(--win-lighter);
@@ -63,7 +62,6 @@ body {
     padding-left: 2px;
 }
 
-/* Desktop */
 .desktop { padding: 20px; display: flex; flex-direction: column; gap: 30px; height: calc(100vh - 40px); }
 
 .icon-item {
@@ -82,7 +80,6 @@ body {
 .window-content .icon-item .label { color: #000; text-shadow: none; }
 .window-content .icon-item:hover .label { color: #fff; }
 
-/* Window Base */
 .window {
     position: absolute;
     display: flex; flex-direction: column;
@@ -133,7 +130,6 @@ body {
     grid-auto-rows: min-content; gap: 20px;
 }
 
-/* Specific Window Sizes */
 #win-main { width: 60%; height: 60%; top: 15%; left: 10%; z-index: 10;}
 #win-details { width: 45%; height: 65%; top: 20%; left: 30%; z-index: 20; display: none; flex-direction: column; }
 
@@ -148,6 +144,36 @@ body {
 .badge.offline { background: var(--win-dark); }
 
 .detail-body { flex-grow: 1;}
+
+
+#notepad-content {
+    display: block !important;
+}
+#notepad-content h1,
+#notepad-content h2,
+#notepad-content h3,
+#notepad-content p,
+#notepad-content ul,
+#notepad-content ol,
+#notepad-content li,
+#notepad-content blockquote,
+#notepad-content pre,
+#notepad-content code {
+    display: block;
+    width: 100%;
+}
+#notepad-content h1 { font-size: 2em; margin: 0.5em 0; font-weight: bold; }
+#notepad-content h2 { font-size: 1.5em; margin: 0.5em 0; font-weight: bold; }
+#notepad-content h3 { font-size: 1.2em; margin: 0.5em 0; font-weight: bold; }
+#notepad-content p  { margin: 0.5em 0; line-height: 1.6; }
+#notepad-content ul,
+#notepad-content ol { padding-left: 1.5em; margin: 0.5em 0; }
+#notepad-content li { display: list-item; margin: 0.2em 0; }
+#notepad-content strong { font-weight: bold; }
+#notepad-content em { font-style: italic; }
+#notepad-content code { display: inline; background: #eee; padding: 0 3px; }
+#notepad-content pre  { background: #000; color: #0f0; padding: 10px; overflow-x: auto; }
+#notepad-content pre code { display: block; background: none; padding: 0; }
 .detail-body p { line-height: 1.5; margin-bottom: 15px; font-size: 18px;}
 .detail-body h3 { font-size: 18px; margin-bottom: 5px; text-decoration: underline;}
 .detail-body ul { list-style-type: square; padding-left: 20px; line-height: 1.5; margin-bottom: 15px; font-size: 16px;}
@@ -164,7 +190,6 @@ body {
     flex: 1; padding: 6px; text-align: center; text-decoration: none; color: #000; font-family: 'Pixelify Sans', sans-serif; font-size: 18px;
 }
 
-/* Taskbar */
 .taskbar {
     position: fixed; bottom: 0; left: 0; width: 100%; height: 35px;
     display: flex; align-items: center; padding: 2px 4px; z-index: 999;

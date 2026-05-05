@@ -1,4 +1,3 @@
-// --- DATA ---
 const projectData = {
     camsnipe: {
         icon: "👁️", title: "CamSnipe Hub", badge: "LIVE", isLive: true,
@@ -39,7 +38,7 @@ const projectData = {
     }
 };
 
-// --- CLOCK ---
+
 function updateClock() {
     const now = new Date();
     let hours = now.getHours();
@@ -51,7 +50,11 @@ function updateClock() {
     document.getElementById('clock').innerText = hours + ':' + minutes + ' ' + ampm;
 }
 
-// --- WINDOW MANAGEMENT ---
+const writeupsData = [
+    "FSMonitor LRCE.md"
+];
+
+
 let highestZ = 100;
 
 function focusWindow(id) {
@@ -124,16 +127,15 @@ function maximize(id, btnElement) {
         win.dataset.origT = win.style.top || getComputedStyle(win).top;
         win.dataset.origL = win.style.left || getComputedStyle(win).left;
 
-        win.style.width = '100%';
-        win.style.height = 'calc(100vh - 35px)';
-        win.style.top = '0';
-        win.style.left = '0';
+    win.style.width = '100vw';
+    win.style.height = 'calc(100vh - 35px)';
+    win.style.top = '0';
+    win.style.left = '0';
         win.dataset.maximized = 'true';
         if (btnElement) btnElement.innerText = '❐';
     }
 }
 
-// --- DRAGGING LOGIC ---
 function dragWindow(e, id) {
     if (e.target.tagName === 'BUTTON' || e.target.closest('.title-controls')) return;
     focusWindow(id);
@@ -158,13 +160,70 @@ function dragWindow(e, id) {
     };
 }
 
-// --- ICON DOUBLE CLICK LOGIC ---
+function populateWriteups() {
+    const listContainer = document.getElementById('writeups-list');
+    if (!listContainer) return;
+    
+    listContainer.innerHTML = '';
+    
+    if (writeupsData.length === 0) {
+        listContainer.innerHTML = '<div style="padding:10px;">No writeups found.</div>';
+        return;
+    }
+
+    writeupsData.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'icon-item app-icon';
+        
+        item.innerHTML = `
+            <span class="emoji-icon">📄</span>
+            <span class="label" style="word-break: break-all;">${file}</span>
+        `;
+        
+        item.addEventListener('click', () => {
+            // Deselect others in writeups
+            document.querySelectorAll('#writeups-list .app-icon').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+        });
+
+        item.addEventListener('dblclick', () => openNotepad(file));
+        
+        listContainer.appendChild(item);
+    });
+}
+
+async function openNotepad(filename) {
+    openApp('win-notepad');
+    document.getElementById('notepad-title-bar').innerText = `${filename} - Notepad`;
+    document.getElementById('tab-notepad-title').innerText = filename;
+    
+    const contentDiv = document.getElementById('notepad-content');
+    contentDiv.innerHTML = '<p>Loading...</p>';
+    
+    try {
+        const response = await fetch(`writeups/${filename}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const text = await response.text();
+        contentDiv.innerHTML = marked.parse(text);
+    } catch (error) {
+        contentDiv.innerHTML = `<p style="color:red; margin-bottom:10px;">Failed to load ${filename}: ${error.message}</p>
+        <p><strong>Note:</strong> Browsers block loading local files over <code>file://</code> via fetch due to CORS/security rules.</p>
+        <p>To view writeups, please run a local web server in your terminal:</p>
+        <div style="background:var(--win-bg); padding:10px; border:2px inset white; font-family:monospace; margin-top:5px; color:black;">
+            python3 -m http.server 3000
+        </div>
+        <p style="margin-top:10px;">Then open <a href="http://localhost:3000" target="_blank" style="color:blue;">http://localhost:3000</a> in your browser.</p>`;
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Start clock
+
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Icon click/dblclick handlers
+    populateWriteups();
+    
     document.querySelectorAll('.app-icon').forEach(icon => {
         icon.addEventListener('click', () => {
             document.querySelectorAll('.app-icon').forEach(i => i.classList.remove('selected'));
@@ -209,10 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize focus
     focusWindow('win-main');
 
-    // Window clicks focus them
     document.querySelectorAll('.window').forEach(win => {
         win.addEventListener('mousedown', () => focusWindow(win.id));
     });
