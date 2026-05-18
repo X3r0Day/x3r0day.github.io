@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project X3r0Day - The Arc Reveal</title>
+  <style>
+    /* serif font - keeps it clean */
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
+
+    :root {
+      --bg-color: #080908;
+      --logo-color: #f0ebd9;
+      --logo-stroke: rgba(240, 235, 217, 0.35);
+      --grid-color: rgba(240, 235, 217, 0.25);
+      --accent-glow: #e6c875; /* cyber-gold accent */
+      --glitch-red: rgba(255, 40, 40, 0.8);
+      --glitch-cyan: rgba(40, 255, 255, 0.8);
+    }
+
+    body, html {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      background-color: var(--bg-color);
+      display: flex; justify-content: center; align-items: center;
+      font-family: 'Playfair Display', serif;
+      overflow: hidden; position: relative;
+    }
+
+    /* noise + scanlines */
+    .noise-overlay {
+      position: absolute; inset: 0; z-index: 2; opacity: 0.05; pointer-events: none;
+      background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
+    }
+    .scanline-overlay {
+      position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0;
+      background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.2) 51%);
+      background-size: 100% 4px;
+      animation: fadeBg 6s ease 3.5s forwards;
+    }
+
+    .bg-image {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 1; opacity: 0;
+      filter: brightness(0.5) contrast(1.2) grayscale(0.2);
+      animation: fadeBg 6s ease 3.5s forwards;
+    }
+
+    /* arc container */
+    .branding-container {
+      position: relative; display: flex; align-items: center; z-index: 3;
+      height: 130px; width: max-content;
+      /* arc movement */
+      animation: swoopToZenith 3s cubic-bezier(0.25, 1, 0.4, 1) 7s forwards;
+    }
+
+    /* grid lines */
+    .grid-line-top, .grid-line-bottom {
+      position: absolute; left: -140px; right: -140px; height: 1px;
+      background-color: var(--grid-color); opacity: 0;
+      animation: flashGrid 4s ease 1.5s forwards;
+    }
+    .grid-line-top { top: -20px; }
+    .grid-line-bottom { bottom: -20px; }
+
+    /* crosshair dots */
+    .grid-line-top::before, .grid-line-top::after, 
+    .grid-line-bottom::before, .grid-line-bottom::after {
+      content: ''; position: absolute; width: 5px; height: 5px; border: 1px solid var(--accent-glow);
+      opacity: 0.7; transform: translate(-50%, -50%);
+    }
+    .grid-line-top::before { left: 0; top: 0; } .grid-line-top::after { right: 0; top: 0; }
+    .grid-line-bottom::before { left: 0; top: 0; } .grid-line-bottom::after { right: 0; top: 0; }
+
+    .grid-box-left, .grid-box-right {
+      position: absolute; top: -20px; bottom: -20px; width: 80px;
+      border: 1px solid var(--grid-color); border-top: none; border-bottom: none;
+      opacity: 0; animation: flashGrid 4s ease 1.5s forwards;
+      display: flex; justify-content: center; align-items: center;
+      color: var(--grid-color); font-family: sans-serif; font-size: 13px; letter-spacing: 2px;
+    }
+    .grid-box-left { left: -140px; } .grid-box-right { right: -140px; }
+
+    .grid-line-inner {
+      position: absolute; top: -35px; bottom: -35px; width: 1px; background-color: var(--grid-color);
+      opacity: 0; animation: flashGrid 4s ease 1.5s forwards;
+    }
+    .inner-left { left: 0; } .inner-mark-right { left: 90px; } .inner-text-left { left: 130px; } .inner-right { right: 0; }
+
+    /* logo mark */
+    .logo-mark {
+      height: 90px; width: 0px; margin-right: 0px; opacity: 0; overflow: visible;
+      display: flex; justify-content: center; align-items: center;
+      animation: 
+        revealMark 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards,
+        removeMarkMargin 3s cubic-bezier(0.25, 1, 0.5, 1) 7s forwards; 
+    }
+    
+    .logo-mark svg {
+      width: 90px; height: 90px; flex-shrink: 0;
+      transform: translateX(-25px) scale(0.85);
+      animation: 
+        slideMark 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards,
+        zenithActivationGlow 3s ease 8.5s forwards; /* glow at apex */
+    }
+
+    /* text + collapse */
+    .text-wrapper {
+      display: grid; grid-template-columns: 1fr; align-items: center; height: 100%;
+      animation: textCollapse 3s cubic-bezier(0.25, 1, 0.5, 1) 7s forwards;
+    }
+    
+    .text-wrapper-inner {
+      overflow: hidden; min-width: 0; position: relative;
+      animation: zeroDayGlitch 0.4s ease 6.6s forwards; /* glitch before collapse */
+    }
+
+    .logo-text {
+      position: relative; font-size: 110px; font-weight: 400; color: transparent; 
+      -webkit-text-stroke: 1px var(--logo-stroke); margin: 0; white-space: nowrap;
+      font-feature-settings: "lnum"; font-variant-numeric: lining-nums; letter-spacing: 2px;
+    }
+
+    /* wipe fill ltr */
+    .logo-text::before {
+      content: attr(data-text); position: absolute; top: 0; left: 0; color: var(--logo-color);
+      -webkit-text-stroke: 0px transparent; white-space: nowrap;
+      -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0);
+      animation: textWipeReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.5s forwards;
+    }
+
+    /* scanner laser */
+    .scanner-laser {
+      position: absolute; top: 15px; bottom: 15px; width: 2px;
+      background-color: var(--accent-glow); box-shadow: 0 0 15px var(--accent-glow), 0 0 5px #fff;
+      left: 0; opacity: 0; z-index: 5;
+      animation: laserScan 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.5s forwards;
+    }
+
+    /* subtitle */
+    .subtitle {
+      position: absolute; bottom: 50px; left: 70px;
+      font-family: 'Courier New', Courier, monospace; color: var(--logo-color);
+      font-size: 11px; letter-spacing: 3px; line-height: 1.6; opacity: 0;
+      animation: subtitleSequence 4s linear 4s forwards; text-transform: uppercase; z-index: 3;
+    }
+
+    /* blinking cursor */
+    .subtitle::after {
+      content: ' _'; color: var(--accent-glow); animation: blink 1s step-start infinite;
+    }
+
+    /* --- keyframes --- */
+
+    @keyframes revealMark {
+      0% { width: 0px; margin-right: 0px; opacity: 0; }
+      15% { opacity: 1; }
+      100% { width: 90px; margin-right: 40px; opacity: 1; }
+    }
+    @keyframes slideMark {
+      0% { transform: translateX(-25px) scale(0.85); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translateX(0) scale(1); opacity: 1; }
+    }
+    
+    @keyframes textWipeReveal {
+      0% { -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0); }
+      100% { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); }
+    }
+    /* laser follows wipe */
+    @keyframes laserScan {
+      0% { left: 0%; opacity: 0; }
+      10% { opacity: 1; height: 100%; top: 0; }
+      90% { opacity: 1; }
+      100% { left: 100%; opacity: 0; height: 0%; top: 50%; }
+    }
+
+    @keyframes flashGrid {
+      0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; }
+    }
+    @keyframes fadeBg {
+      0% { opacity: 0; transform: scale(1.05); }
+      100% { opacity: 0.6; transform: scale(1); }
+    }
+    @keyframes subtitleSequence {
+      0% { opacity: 0; transform: translateY(10px); }
+      15% { opacity: 0.8; transform: translateY(0); }
+      75% { opacity: 0.8; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-10px); } 
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* --- arc takeover --- */
+
+    /* glitch before vanish */
+    @keyframes zeroDayGlitch {
+      0% { transform: translate(0); text-shadow: none; opacity: 1; }
+      20% { transform: translate(-2px, 2px); text-shadow: 2px 0 var(--glitch-red), -2px 0 var(--glitch-cyan); }
+      40% { transform: translate(2px, -1px); text-shadow: -2px 0 var(--glitch-red), 2px 0 var(--glitch-cyan); }
+      60% { transform: translate(0); filter: blur(2px); opacity: 0.8; }
+      100% { transform: translate(0); filter: blur(0); opacity: 1; text-shadow: none; }
+    }
+
+    @keyframes textCollapse {
+      0% { grid-template-columns: 1fr; opacity: 1; }
+      20% { opacity: 0; }
+      100% { grid-template-columns: 0fr; opacity: 0; }
+    }
+    
+    @keyframes removeMarkMargin {
+      0%, 20% { margin-right: 40px; }
+      100% { margin-right: 0px; }
+    }
+
+    /* arc swoops up */
+    @keyframes swoopToZenith {
+      0%, 15% { transform: translate(0, 0) scale(1) rotate(0deg); }
+      /* mid: banks right + scales */
+      50% { transform: translate(60px, -18vh) scale(1.3) rotate(6deg); }
+      /* apex: top center */
+      100% { transform: translate(0, -35vh) scale(1.6) rotate(0deg); }
+    }
+
+    /* glow on arrival */
+    @keyframes zenithActivationGlow {
+      0% { fill: var(--logo-color); filter: drop-shadow(0 0 0px transparent); }
+      100% { fill: var(--accent-glow); filter: drop-shadow(0 0 25px rgba(230, 200, 117, 0.4)); }
+    }
+
+  </style>
+</head>
+<body>
+  
+  <div class="noise-overlay"></div>
+  <div class="scanline-overlay"></div>
+  <img class="bg-image" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000&auto=format&fit=crop" alt="Dark Mountain Landscape">
+  
+  <div class="branding-container">
+    
+    <!-- grid bounds -->
+    <div class="grid-line-top"></div>
+    <div class="grid-line-bottom"></div>
+    <div class="grid-box-left">SYS</div>
+    <div class="grid-box-right">0-D</div>
+    <div class="grid-line-inner inner-left"></div>
+    <div class="grid-line-inner inner-mark-right"></div>
+    <div class="grid-line-inner inner-text-left"></div>
+    <div class="grid-line-inner inner-right"></div>
+
+    <!-- logo mark -->
+    <div class="logo-mark">
+      <svg viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">
+        <!-- sharpened vertices -->
+        <polygon points="50,10 95,105 72,105 50,55 28,105 5,105" fill="var(--logo-color)" />
+      </svg>
+    </div>
+    
+    <!-- wordmark + laser -->
+    <div class="text-wrapper">
+      <div class="text-wrapper-inner">
+        <h1 class="logo-text" data-text="X3r0Day">X3r0Day</h1>
+        <div class="scanner-laser"></div>
+      </div>
+    </div>
+    
+  </div>
+
+  <div class="subtitle">
+    [INIT] SYSTEM WITH MYSTERY FORM<br>
+    GEOMETRIC RESTRAINT AND MYTH THEME<br>
+    DEPLOYING FILELESS ARCHITECTURE
+  </div>
+
+</body>
+</html>
