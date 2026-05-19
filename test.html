@@ -49,7 +49,6 @@
       background-color: var(--bg-color);
       font-family: 'Playfair Display', serif;
       overflow-x: hidden; 
-      
       overflow-y: hidden;
       scroll-behavior: smooth;
     }
@@ -297,8 +296,13 @@
     .writeup-card:hover .card-footer { color: var(--accent-glow); }
     .writeup-card:hover .bespoke-arrow { transform: translateX(8px); width: 45px; stroke: var(--accent-glow); }
 
-    .reveal-on-scroll { opacity: 0; clip-path: circle(0% at 50% 100%); transform: translateY(30px); }
-    .reveal-on-scroll.visible { animation: curvyReveal 1.2s cubic-bezier(0.25, 1, 0.25, 1) forwards; }
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    .reveal-on-scroll.visible {
+      animation: curvyReveal 1.2s cubic-bezier(0.25, 1, 0.25, 1) forwards;
+    }
     
     .writeups-grid > :nth-child(1).visible { animation-delay: 0.1s; }
     .writeups-grid > :nth-child(2).visible { animation-delay: 0.25s; }
@@ -323,7 +327,11 @@
     @keyframes fadeText { 0% { opacity: 0; } 100% { opacity: 1; } }
     @keyframes fadeTextWithVis { 0% { opacity: 0; visibility: hidden; } 1% { visibility: visible; } 100% { opacity: 1; visibility: visible; } }
     @keyframes scrollPulse { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
-    @keyframes curvyReveal { to { opacity: 1; clip-path: circle(150% at 50% 50%); transform: translate3d(0, 0, 0); } }
+
+    @keyframes curvyReveal {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
 
   </style>
 </head>
@@ -389,14 +397,14 @@
 
   <section class="writeups-section" id="writeups">
     
-    <div class="section-header reveal-on-scroll" style="opacity: 0; clip-path: circle(0%);">
+    <div class="section-header reveal-on-scroll" style="opacity: 0;">
       <h2 class="section-title">Research by Project X3r0Day</h2>
       <div class="section-line"></div>
     </div>
 
     <div class="writeups-grid">
       
-      <a href="https://xerosec.medium.com/local-code-execution-via-git-workspace-poisoning-fsmonitor-7041a2560395" target="_blank" class="writeup-card reveal-on-scroll" style="opacity: 0; clip-path: circle(0%);">
+        <a href="https://xerosec.medium.com/local-code-execution-via-git-workspace-poisoning-fsmonitor-7041a2560395" target="_blank" class="writeup-card reveal-on-scroll" style="opacity: 0;">
         <div class="card-curvy-bg"></div>
         <div class="card-content">
           <div class="card-meta">
@@ -413,7 +421,7 @@
         </div>
       </a>
 
-      <a href="https://github.com/X3r0Day/FUD-C2-Trojan" class="writeup-card reveal-on-scroll" style="opacity: 0; clip-path: circle(0%);">
+        <a href="https://github.com/X3r0Day/FUD-C2-Framework.git" target="_blank" class="writeup-card reveal-on-scroll" style="opacity: 0;">
         <div class="card-curvy-bg"></div>
         <div class="card-content">
           <div class="card-meta">
@@ -435,14 +443,24 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      
+
       const ffBtn = document.getElementById('ffAnimBtn');
       let isFastForwarding = false;
-      
+
+      const revealVisibleElements = () => {
+        document.querySelectorAll('.reveal-on-scroll:not(.visible)').forEach(el => {
+          const rect = el.getBoundingClientRect();
+          if (rect.top < window.innerHeight * 0.95 && rect.bottom > 0) {
+            el.classList.add('visible');
+          }
+        });
+      };
+
       const unlockScroll = () => {
         document.body.classList.add('scroll-unlocked');
         document.documentElement.classList.add('scroll-unlocked');
         if (ffBtn) ffBtn.classList.add('hidden');
+        requestAnimationFrame(() => setTimeout(revealVisibleElements, 50));
       };
 
       const animTimer = setTimeout(unlockScroll, 10000);
@@ -451,11 +469,10 @@
         ffBtn.addEventListener('click', () => {
           if (isFastForwarding) return;
           isFastForwarding = true;
-          
+
           clearTimeout(animTimer);
           ffBtn.classList.add('hidden');
-          
-          document.body.classList.add('ff-active'); 
+          document.body.classList.add('ff-active');
 
           const animations = document.getAnimations();
           const finiteAnims = [];
@@ -469,7 +486,7 @@
               } else {
                 finiteAnims.push(anim);
               }
-              anim.playbackRate = 15; 
+              anim.playbackRate = 15;
             } catch(e) {}
           });
 
@@ -477,11 +494,9 @@
             Promise.allSettled(finiteAnims.map(a => a.finished)),
             new Promise(res => setTimeout(res, 800))
           ]).finally(() => {
-            
             infiniteAnims.forEach(anim => {
               try { anim.playbackRate = 1; } catch(e) {}
             });
-            
             document.body.classList.remove('ff-active');
             unlockScroll();
           });
@@ -500,11 +515,13 @@
             observer.unobserve(entry.target);
           }
         });
-      }, { threshold: 0.15 });
+      }, { threshold: 0.1, rootMargin: '0px 0px -5% 0px' });
 
       document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
         observer.observe(el);
       });
+
+      window.addEventListener('scroll', revealVisibleElements, { passive: true });
     });
   </script>
 
