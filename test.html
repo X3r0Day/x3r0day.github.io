@@ -3,70 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project X3r0Day - The Arc Reveal</title>
-  <style>
-    /* serif font - keeps it clean */
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&display=swap');
+  <title>Project X3r0Day - XeroDay's Arc</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <style>
     :root {
       --bg-color: #080908;
       --logo-color: #f0ebd9;
       --logo-stroke: rgba(240, 235, 217, 0.35);
       --grid-color: rgba(240, 235, 217, 0.25);
-      --accent-glow: #e6c875; /* cyber-gold accent */
+      --accent-glow: #e6c875; 
       --glitch-red: rgba(255, 40, 40, 0.8);
       --glitch-cyan: rgba(40, 255, 255, 0.8);
+    }
+
+    html {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(230, 200, 117, 0.3) var(--bg-color);
+    }
+    ::-webkit-scrollbar {
+      width: 8px; 
+      background: var(--bg-color);
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-color);
+      border-left: 1px solid rgba(230, 200, 117, 0.05);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(230, 200, 117, 0.2); 
+      border-radius: 10px; 
+      border: 2px solid var(--bg-color); 
+      background-clip: padding-box;
+      transition: background 0.3s ease;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--accent-glow); 
+      border: 1px solid var(--bg-color); 
     }
 
     body, html {
       margin: 0; padding: 0; width: 100%; height: 100%;
       background-color: var(--bg-color);
-      display: flex; justify-content: center; align-items: center;
       font-family: 'Playfair Display', serif;
-      overflow: hidden; position: relative;
+      overflow-x: hidden; 
+      
+      overflow-y: hidden;
+      scroll-behavior: smooth;
+    }
+    
+    html.scroll-unlocked, 
+    body.scroll-unlocked { 
+      overflow-y: auto !important; 
     }
 
-    /* noise + scanlines */
     .noise-overlay {
-      position: absolute; inset: 0; z-index: 2; opacity: 0.05; pointer-events: none;
+      position: fixed; inset: 0; z-index: 50; opacity: 0.05; pointer-events: none;
       background-image: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3E%3C/svg%3E');
     }
+
+    .hero-section {
+      position: relative; width: 100%; height: 100vh;
+      display: flex; justify-content: center; align-items: center;
+      overflow: hidden;
+    }
+
+    .ff-btn {
+      position: absolute; top: 65%; left: 50%; 
+      transform: translate(-50%, -50%);
+      font-family: 'Courier New', Courier, monospace; 
+      font-size: 14px; font-weight: 600;
+      color: var(--bg-color); background: var(--accent-glow);
+      border: none; padding: 12px 28px; 
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; z-index: 100; opacity: 0; 
+      animation: fadeText 1s ease 1s forwards; 
+      transition: all 0.3s cubic-bezier(0.25, 1, 0.25, 1);
+      box-shadow: 0 0 20px rgba(230, 200, 117, 0.3);
+      display: flex; align-items: center; gap: 8px;
+      clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    }
+    .ff-btn:hover {
+      background: #fff; box-shadow: 0 0 35px rgba(255, 255, 255, 0.5);
+      transform: translate(-50%, -50%) scale(1.05);
+    }
+    .ff-btn.hidden {
+      opacity: 0 !important; pointer-events: none;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    .ff-icon { font-size: 10px; display: inline-block; transform: translateY(-1px); }
+
+    .ff-overlay {
+      position: absolute; inset: 0; z-index: 45; pointer-events: none;
+      background: repeating-linear-gradient(to bottom, transparent, transparent 4px, rgba(230, 200, 117, 0.15) 5px, rgba(230, 200, 117, 0.15) 10px);
+      background-size: 100% 200%; opacity: 0; mix-blend-mode: overlay; transition: opacity 0.3s ease;
+    }
+
+    body.ff-active .ff-overlay { opacity: 1; animation: ffTracking 0.2s linear infinite; }
+    body.ff-active .scanline-overlay { background-size: 100% 12px; opacity: 0.8 !important; }
+    body.ff-active .logo-mark svg { filter: drop-shadow(5px 0px 0px rgba(255,40,40,0.7)) drop-shadow(-5px 0px 0px rgba(40,255,255,0.7)); }
+
     .scanline-overlay {
-      position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0;
+      position: absolute; inset: 0; z-index: 4; pointer-events: none; 
       background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.2) 51%);
-      background-size: 100% 4px;
-      animation: fadeBg 6s ease 3.5s forwards;
+      background-size: 100% 4px; animation: fadeBg 6s ease 3.5s both; 
+      transition: background-size 0.3s ease, opacity 0.3s ease;
     }
 
     .bg-image {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; z-index: 1; opacity: 0;
-      filter: brightness(0.5) contrast(1.2) grayscale(0.2);
-      animation: fadeBg 6s ease 3.5s forwards;
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; 
+      filter: brightness(0.25) contrast(1.3) grayscale(0.8) sepia(0.3) hue-rotate(5deg) saturate(1.5);
+      animation: fadeBg 6s ease 3.5s both;
     }
 
-    /* arc container */
+    .hero-fade-bottom {
+      position: absolute; bottom: 0; left: 0; width: 100%; height: 15vh;
+      background: linear-gradient(to bottom, transparent, var(--bg-color)); z-index: 20; pointer-events: none;
+    }
+
+    .curvy-ribbon-container {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none;
+      animation: fadeBg 6s ease 3.5s both;
+    }
+    .ribbon-wave {
+      position: absolute; top: 20%; left: 0; width: 200%; height: 60%;
+      background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" preserveAspectRatio="none"%3E%3Cpath d="M0,100 C150,200 250,0 400,100 C550,200 650,0 800,100" fill="none" stroke="%23e6c875" stroke-width="0.5" stroke-opacity="0.3"/%3E%3C/svg%3E');
+      background-size: 50% 100%; background-repeat: repeat-x; will-change: transform;
+    }
+    .ribbon-1 { animation: waveGlide 15s linear infinite; }
+    .ribbon-2 { top: 25%; transform: scaleY(-1); opacity: 0.5; animation: waveGlide 22s linear infinite reverse; }
+
     .branding-container {
-      position: relative; display: flex; align-items: center; z-index: 3;
-      height: 130px; width: max-content;
-      /* arc movement */
-      animation: swoopToZenith 3s cubic-bezier(0.25, 1, 0.4, 1) 7s forwards;
+      position: relative; display: flex; align-items: center; z-index: 6;
+      height: 130px; width: max-content; will-change: transform;
+      animation: swoopToZenith 3s cubic-bezier(0.25, 1, 0.4, 1) 7s both;
     }
 
-    /* grid lines */
     .grid-line-top, .grid-line-bottom {
       position: absolute; left: -140px; right: -140px; height: 1px;
-      background-color: var(--grid-color); opacity: 0;
-      animation: flashGrid 4s ease 1.5s forwards;
+      background-color: var(--grid-color); animation: flashGrid 4s ease 1.5s both;
     }
-    .grid-line-top { top: -20px; }
-    .grid-line-bottom { bottom: -20px; }
+    .grid-line-top { top: -20px; } .grid-line-bottom { bottom: -20px; }
 
-    /* crosshair dots */
-    .grid-line-top::before, .grid-line-top::after, 
-    .grid-line-bottom::before, .grid-line-bottom::after {
+    .grid-line-top::before, .grid-line-top::after, .grid-line-bottom::before, .grid-line-bottom::after {
       content: ''; position: absolute; width: 5px; height: 5px; border: 1px solid var(--accent-glow);
-      opacity: 0.7; transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%); opacity: 0.7;
     }
     .grid-line-top::before { left: 0; top: 0; } .grid-line-top::after { right: 0; top: 0; }
     .grid-line-bottom::before { left: 0; top: 0; } .grid-line-bottom::after { right: 0; top: 0; }
@@ -74,44 +157,36 @@
     .grid-box-left, .grid-box-right {
       position: absolute; top: -20px; bottom: -20px; width: 80px;
       border: 1px solid var(--grid-color); border-top: none; border-bottom: none;
-      opacity: 0; animation: flashGrid 4s ease 1.5s forwards;
       display: flex; justify-content: center; align-items: center;
       color: var(--grid-color); font-family: sans-serif; font-size: 13px; letter-spacing: 2px;
+      animation: flashGrid 4s ease 1.5s both;
     }
     .grid-box-left { left: -140px; } .grid-box-right { right: -140px; }
 
     .grid-line-inner {
       position: absolute; top: -35px; bottom: -35px; width: 1px; background-color: var(--grid-color);
-      opacity: 0; animation: flashGrid 4s ease 1.5s forwards;
+      animation: flashGrid 4s ease 1.5s both;
     }
     .inner-left { left: 0; } .inner-mark-right { left: 90px; } .inner-text-left { left: 130px; } .inner-right { right: 0; }
 
-    /* logo mark */
     .logo-mark {
-      height: 90px; width: 0px; margin-right: 0px; opacity: 0; overflow: visible;
-      display: flex; justify-content: center; align-items: center;
-      animation: 
-        revealMark 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards,
-        removeMarkMargin 3s cubic-bezier(0.25, 1, 0.5, 1) 7s forwards; 
+      height: 90px; overflow: visible; display: flex; justify-content: center; align-items: center;
+      will-change: width, margin-right, opacity;
+      animation: revealMark 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both, removeMarkMargin 3s cubic-bezier(0.25, 1, 0.5, 1) 7s forwards; 
     }
     
     .logo-mark svg {
-      width: 90px; height: 90px; flex-shrink: 0;
-      transform: translateX(-25px) scale(0.85);
-      animation: 
-        slideMark 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.2s forwards,
-        zenithActivationGlow 3s ease 8.5s forwards; /* glow at apex */
+      flex-shrink: 0; will-change: transform, filter; transition: filter 0.3s ease;
+      animation: slideMark 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.2s both, zenithActivationGlow 3s ease 8.5s forwards;
     }
 
-    /* text + collapse */
     .text-wrapper {
       display: grid; grid-template-columns: 1fr; align-items: center; height: 100%;
+      will-change: grid-template-columns, opacity;
       animation: textCollapse 3s cubic-bezier(0.25, 1, 0.5, 1) 7s forwards;
     }
-    
     .text-wrapper-inner {
-      overflow: hidden; min-width: 0; position: relative;
-      animation: zeroDayGlitch 0.4s ease 6.6s forwards; /* glitch before collapse */
+      overflow: hidden; min-width: 0; position: relative; animation: zeroDayGlitch 0.4s ease 6.6s forwards; 
     }
 
     .logo-text {
@@ -119,156 +194,319 @@
       -webkit-text-stroke: 1px var(--logo-stroke); margin: 0; white-space: nowrap;
       font-feature-settings: "lnum"; font-variant-numeric: lining-nums; letter-spacing: 2px;
     }
-
-    /* wipe fill ltr */
     .logo-text::before {
       content: attr(data-text); position: absolute; top: 0; left: 0; color: var(--logo-color);
       -webkit-text-stroke: 0px transparent; white-space: nowrap;
-      -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0);
-      animation: textWipeReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.5s forwards;
+      animation: textWipeReveal 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.5s both;
     }
 
-    /* scanner laser */
     .scanner-laser {
-      position: absolute; top: 15px; bottom: 15px; width: 2px;
-      background-color: var(--accent-glow); box-shadow: 0 0 15px var(--accent-glow), 0 0 5px #fff;
-      left: 0; opacity: 0; z-index: 5;
-      animation: laserScan 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.5s forwards;
+      position: absolute; top: 15px; bottom: 15px; width: 2px; background-color: var(--accent-glow); 
+      will-change: left, opacity, height, top; z-index: 5;
+      animation: laserScan 1.5s cubic-bezier(0.16, 1, 0.3, 1) 1.5s both;
     }
 
-    /* subtitle */
     .subtitle {
-      position: absolute; bottom: 50px; left: 70px;
+      position: absolute; bottom: 80px; left: 70px;
       font-family: 'Courier New', Courier, monospace; color: var(--logo-color);
-      font-size: 11px; letter-spacing: 3px; line-height: 1.6; opacity: 0;
-      animation: subtitleSequence 4s linear 4s forwards; text-transform: uppercase; z-index: 3;
+      font-size: 11px; letter-spacing: 3px; line-height: 1.6; text-transform: uppercase; z-index: 6;
+      animation: subtitleSequence 4s linear 4s both; 
+    }
+    .subtitle::after { content: ' _'; color: var(--accent-glow); animation: blink 1s step-start infinite; }
+
+    .cta-button {
+      position: absolute; top: 55%; left: 50%; padding: 16px 36px;
+      color: var(--logo-color); text-decoration: none;
+      font-family: 'Courier New', Courier, monospace; font-size: 13px;
+      letter-spacing: 4px; text-transform: uppercase; border: 1px solid var(--grid-color);
+      background: rgba(8, 9, 8, 0.3); backdrop-filter: blur(5px); z-index: 10; overflow: hidden;
+      will-change: transform, opacity, border-radius; transition: border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+      animation: revealCTACurved 2s cubic-bezier(0.25, 1, 0.4, 1) 9s both;
+    }
+    .cta-button span { position: relative; z-index: 2; opacity: 0; animation: fadeText 1s ease 10s forwards; }
+    .cta-button::after {
+      content: ''; position: absolute; left: -100%; top: 0; width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(230, 200, 117, 0.2), transparent); z-index: 1; transition: left 0s;
+    }
+    .cta-button:hover { border-color: rgba(230, 200, 117, 0.6); color: var(--accent-glow); box-shadow: 0 0 20px rgba(230, 200, 117, 0.1); }
+    .cta-button:hover::after { left: 100%; transition: left 0.8s ease-in-out; }
+
+    .scroll-indicator {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; z-index: 25; text-decoration: none;
+      animation: fadeTextWithVis 1s ease 10s both;
+    }
+    .scroll-text {
+      font-family: 'Courier New', Courier, monospace; font-size: 10px; color: var(--grid-color); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;
+    }
+    .scroll-line {
+      width: 1px; height: 35px; background: linear-gradient(to bottom, var(--accent-glow), transparent);
+      animation: scrollPulse 2s cubic-bezier(0.25, 1, 0.4, 1) infinite;
     }
 
-    /* blinking cursor */
-    .subtitle::after {
-      content: ' _'; color: var(--accent-glow); animation: blink 1s step-start infinite;
-    }
-
-    /* --- keyframes --- */
-
-    @keyframes revealMark {
-      0% { width: 0px; margin-right: 0px; opacity: 0; }
-      15% { opacity: 1; }
-      100% { width: 90px; margin-right: 40px; opacity: 1; }
-    }
-    @keyframes slideMark {
-      0% { transform: translateX(-25px) scale(0.85); opacity: 0; }
-      20% { opacity: 1; }
-      100% { transform: translateX(0) scale(1); opacity: 1; }
+    .writeups-section {
+      position: relative; width: 100%; min-height: 100vh;
+      background-color: var(--bg-color); box-sizing: border-box;
+      padding: 120px 8%; z-index: 10;
     }
     
-    @keyframes textWipeReveal {
-      0% { -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0); }
-      100% { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); }
-    }
-    /* laser follows wipe */
-    @keyframes laserScan {
-      0% { left: 0%; opacity: 0; }
-      10% { opacity: 1; height: 100%; top: 0; }
-      90% { opacity: 1; }
-      100% { left: 100%; opacity: 0; height: 0%; top: 50%; }
-    }
+    .section-header { display: flex; align-items: center; margin-bottom: 70px; }
+    .section-title { color: var(--logo-color); font-size: 2.2rem; margin: 0; font-weight: 400; letter-spacing: 2px; }
+    .section-line { flex-grow: 1; height: 1px; background: var(--grid-color); margin-left: 30px; }
+    .writeups-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 50px; }
 
-    @keyframes flashGrid {
-      0% { opacity: 0; } 15% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; }
+    .writeup-card {
+      position: relative; border-radius: 60px 4px 60px 4px; border: 1px solid var(--grid-color); padding: 45px 35px;
+      text-decoration: none; background: rgba(12, 13, 12, 0.4);
+      display: flex; flex-direction: column; justify-content: space-between;
+      min-height: 240px; overflow: hidden; will-change: transform, border-radius, border-color;
+      transition: all 0.6s cubic-bezier(0.25, 1, 0.25, 1);
     }
-    @keyframes fadeBg {
-      0% { opacity: 0; transform: scale(1.05); }
-      100% { opacity: 0.6; transform: scale(1); }
+    .writeup-card::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 100% 100%, rgba(230, 200, 117, 0.08), transparent 70%);
+      opacity: 0; transition: opacity 0.6s ease; z-index: 0; pointer-events: none;
     }
-    @keyframes subtitleSequence {
-      0% { opacity: 0; transform: translateY(10px); }
-      15% { opacity: 0.8; transform: translateY(0); }
-      75% { opacity: 0.8; transform: translateY(0); }
-      100% { opacity: 0; transform: translateY(-10px); } 
+    .card-curvy-bg {
+      position: absolute; bottom: 10%; left: -50%; width: 200%; height: 50%; pointer-events: none; opacity: 0; z-index: 0;
+      background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" preserveAspectRatio="none"%3E%3Cpath d="M0,100 C150,200 250,0 400,100 C550,200 650,0 800,100" fill="none" stroke="%23e6c875" stroke-width="1.5" stroke-opacity="0.5"/%3E%3C/svg%3E');
+      background-size: 50% 100%; background-repeat: repeat-x; transition: opacity 0.6s ease;
     }
+    .writeup-card:hover { 
+      border-radius: 4px 60px 4px 60px; border-color: rgba(230, 200, 117, 0.4);
+      transform: translateY(-8px) scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+    }
+    .writeup-card:hover::before { opacity: 1; }
+    .writeup-card:hover .card-curvy-bg { opacity: 0.15; animation: waveGlide 6s linear infinite; }
+    .card-content { position: relative; z-index: 1; }
+    
+    .card-meta {
+      display: flex; justify-content: space-between; align-items: center; font-family: 'Courier New', Courier, monospace; font-size: 11px;
+      letter-spacing: 2px; color: var(--accent-glow); text-transform: uppercase; margin-bottom: 25px;
+    }
+    .card-title { color: var(--logo-color); font-size: 1.6rem; margin: 0; line-height: 1.4; font-weight: 500; position: relative; }
+    .card-footer {
+      position: relative; z-index: 1; margin-top: 45px; font-family: 'Courier New', Courier, monospace; font-size: 12px;
+      color: var(--grid-color); text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; transition: color 0.4s ease;
+    }
+    .card-footer span { margin-right: 15px; }
+    .bespoke-arrow {
+      width: 35px; height: 16px; overflow: visible; stroke: currentColor; transition: all 0.5s cubic-bezier(0.25, 1, 0.25, 1);
+    }
+    
+    .writeup-card:hover .card-footer { color: var(--accent-glow); }
+    .writeup-card:hover .bespoke-arrow { transform: translateX(8px); width: 45px; stroke: var(--accent-glow); }
+
+    .reveal-on-scroll { opacity: 0; clip-path: circle(0% at 50% 100%); transform: translateY(30px); }
+    .reveal-on-scroll.visible { animation: curvyReveal 1.2s cubic-bezier(0.25, 1, 0.25, 1) forwards; }
+    
+    .writeups-grid > :nth-child(1).visible { animation-delay: 0.1s; }
+    .writeups-grid > :nth-child(2).visible { animation-delay: 0.25s; }
+    .writeups-grid > :nth-child(3).visible { animation-delay: 0.4s; }
+
+    @keyframes ffTracking { 0% { background-position: 0 0; } 100% { background-position: 0 100vh; } }
+    @keyframes fadeBg { 0% { opacity: 0; visibility: visible; } 100% { opacity: 0.6; visibility: visible; } }
+    @keyframes waveGlide { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
+    @keyframes flashGrid { 0% { opacity: 0; visibility: hidden; } 1% { visibility: visible; } 15%, 75% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+    @keyframes revealMark { 0% { width: 0px; margin-right: 0px; opacity: 0; } 15% { opacity: 1; } 100% { width: 90px; margin-right: 40px; opacity: 1; } }
+    @keyframes slideMark { 0% { transform: translate3d(-25px, 0, 0) scale(0.85); opacity: 0; visibility: visible; } 20% { opacity: 1; } 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; visibility: visible; } }
+    @keyframes textWipeReveal { 0% { -webkit-clip-path: inset(0 100% 0 0); clip-path: inset(0 100% 0 0); } 100% { -webkit-clip-path: inset(0 0 0 0); clip-path: inset(0 0 0 0); } }
+    @keyframes laserScan { 0% { left: 0%; opacity: 0; height: 100%; top: 0; visibility: visible; } 10%, 90% { opacity: 1; height: 100%; top: 0; } 100% { left: 100%; opacity: 0; height: 0%; top: 50%; visibility: hidden; } }
+    @keyframes subtitleSequence { 0% { opacity: 0; transform: translate3d(0, 10px, 0); visibility: visible; } 15%, 75% { opacity: 0.8; transform: translate3d(0, 0, 0); } 100% { opacity: 0; transform: translate3d(0, -10px, 0); visibility: hidden; }  }
     @keyframes blink { 50% { opacity: 0; } }
-
-    /* --- arc takeover --- */
-
-    /* glitch before vanish */
-    @keyframes zeroDayGlitch {
-      0% { transform: translate(0); text-shadow: none; opacity: 1; }
-      20% { transform: translate(-2px, 2px); text-shadow: 2px 0 var(--glitch-red), -2px 0 var(--glitch-cyan); }
-      40% { transform: translate(2px, -1px); text-shadow: -2px 0 var(--glitch-red), 2px 0 var(--glitch-cyan); }
-      60% { transform: translate(0); filter: blur(2px); opacity: 0.8; }
-      100% { transform: translate(0); filter: blur(0); opacity: 1; text-shadow: none; }
-    }
-
-    @keyframes textCollapse {
-      0% { grid-template-columns: 1fr; opacity: 1; }
-      20% { opacity: 0; }
-      100% { grid-template-columns: 0fr; opacity: 0; }
-    }
-    
-    @keyframes removeMarkMargin {
-      0%, 20% { margin-right: 40px; }
-      100% { margin-right: 0px; }
-    }
-
-    /* arc swoops up */
-    @keyframes swoopToZenith {
-      0%, 15% { transform: translate(0, 0) scale(1) rotate(0deg); }
-      /* mid: banks right + scales */
-      50% { transform: translate(60px, -18vh) scale(1.3) rotate(6deg); }
-      /* apex: top center */
-      100% { transform: translate(0, -35vh) scale(1.6) rotate(0deg); }
-    }
-
-    /* glow on arrival */
-    @keyframes zenithActivationGlow {
-      0% { fill: var(--logo-color); filter: drop-shadow(0 0 0px transparent); }
-      100% { fill: var(--accent-glow); filter: drop-shadow(0 0 25px rgba(230, 200, 117, 0.4)); }
-    }
+    @keyframes zeroDayGlitch { 0% { transform: translate3d(0,0,0); text-shadow: none; opacity: 1; } 20% { transform: translate3d(-2px, 2px, 0); text-shadow: 2px 0 var(--glitch-red), -2px 0 var(--glitch-cyan); } 40% { transform: translate3d(2px, -1px, 0); text-shadow: -2px 0 var(--glitch-red), 2px 0 var(--glitch-cyan); } 60% { transform: translate3d(0,0,0); opacity: 0.8; } 100% { transform: translate3d(0,0,0); opacity: 1; text-shadow: none; } }
+    @keyframes textCollapse { 0% { grid-template-columns: 1fr; opacity: 1; } 20% { opacity: 0; } 100% { grid-template-columns: 0fr; opacity: 0; } }
+    @keyframes removeMarkMargin { 0%, 20% { margin-right: 40px; } 100% { margin-right: 0px; } }
+    @keyframes swoopToZenith { 0%, 15% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 1; visibility: visible; } 50% { transform: translate3d(70px, -20vh, 0) scale(1.3) rotate(8deg); opacity: 1; visibility: visible; } 100% { transform: translate3d(0, -35vh, 0) scale(1.6) rotate(0deg); opacity: 1; visibility: visible; } }
+    @keyframes zenithActivationGlow { 0% { fill: var(--logo-color); filter: drop-shadow(0 0 0px transparent); } 100% { fill: var(--accent-glow); filter: drop-shadow(0 0 15px rgba(230, 200, 117, 0.4)); } }
+    @keyframes revealCTACurved { 0% { opacity: 0; transform: translate3d(-50%, -10%, 0) scale(0.5); border-radius: 50px; padding: 16px 16px; visibility: hidden; } 1% { visibility: visible; pointer-events: none; } 40% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); border-radius: 50px; padding: 16px 16px; } 100% { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1); border-radius: 2px; padding: 16px 36px; visibility: visible; pointer-events: auto; } }
+    @keyframes fadeText { 0% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes fadeTextWithVis { 0% { opacity: 0; visibility: hidden; } 1% { visibility: visible; } 100% { opacity: 1; visibility: visible; } }
+    @keyframes scrollPulse { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform: scaleY(1); transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+    @keyframes curvyReveal { to { opacity: 1; clip-path: circle(150% at 50% 50%); transform: translate3d(0, 0, 0); } }
 
   </style>
 </head>
 <body>
   
   <div class="noise-overlay"></div>
-  <div class="scanline-overlay"></div>
-  <img class="bg-image" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000&auto=format&fit=crop" alt="Dark Mountain Landscape">
-  
-  <div class="branding-container">
-    
-    <!-- grid bounds -->
-    <div class="grid-line-top"></div>
-    <div class="grid-line-bottom"></div>
-    <div class="grid-box-left">SYS</div>
-    <div class="grid-box-right">0-D</div>
-    <div class="grid-line-inner inner-left"></div>
-    <div class="grid-line-inner inner-mark-right"></div>
-    <div class="grid-line-inner inner-text-left"></div>
-    <div class="grid-line-inner inner-right"></div>
 
-    <!-- logo mark -->
-    <div class="logo-mark">
-      <svg viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">
-        <!-- sharpened vertices -->
-        <polygon points="50,10 95,105 72,105 50,55 28,105 5,105" fill="var(--logo-color)" />
-      </svg>
+  <section class="hero-section">
+    <div class="ff-overlay"></div>
+    
+    <button class="ff-btn" id="ffAnimBtn">
+      <span class="ff-icon">►►</span> Fast Forward
+    </button>
+
+    <div class="scanline-overlay" style="opacity: 0; visibility: hidden;"></div>
+    <img class="bg-image" style="opacity: 0; visibility: hidden;" src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2000&auto=format&fit=crop" alt="Abstract Dark Geometric Technology">
+    <div class="hero-fade-bottom"></div>
+
+    <div class="curvy-ribbon-container" style="opacity: 0; visibility: hidden;">
+      <div class="ribbon-wave ribbon-1"></div>
+      <div class="ribbon-wave ribbon-2"></div>
     </div>
     
-    <!-- wordmark + laser -->
-    <div class="text-wrapper">
-      <div class="text-wrapper-inner">
-        <h1 class="logo-text" data-text="X3r0Day">X3r0Day</h1>
-        <div class="scanner-laser"></div>
+    <a href="#" target="_blank" class="cta-button" style="opacity: 0; visibility: hidden;">
+      <span>> Get an audit (Coming Soon)</span>
+    </a>
+
+    <div class="branding-container" style="opacity: 0; visibility: hidden;">
+      <div class="grid-line-top"></div>
+      <div class="grid-line-bottom"></div>
+      <div class="grid-box-left">SYS</div>
+      <div class="grid-box-right">0-D</div>
+      <div class="grid-line-inner inner-left"></div>
+      <div class="grid-line-inner inner-mark-right"></div>
+      <div class="grid-line-inner inner-text-left"></div>
+      <div class="grid-line-inner inner-right"></div>
+
+      <div class="logo-mark">
+        <svg width="90" height="90" viewBox="0 0 100 120" preserveAspectRatio="xMidYMid meet">
+          <polygon points="50,10 95,105 72,105 50,55 28,105 5,105" fill="var(--logo-color)" />
+        </svg>
+      </div>
+      
+      <div class="text-wrapper">
+        <div class="text-wrapper-inner">
+          <h1 class="logo-text" data-text="X3r0Day" style="color: transparent;">X3r0Day</h1>
+          <div class="scanner-laser" style="opacity: 0; visibility: hidden;"></div>
+        </div>
       </div>
     </div>
-    
-  </div>
 
-  <div class="subtitle">
-    [INIT] Project X3r0Day<br>
-    WELCOME, ENJOY YOUR STAY<br>
-    TOOLS COMMING SOON...<br>
-  </div>
+    <div class="subtitle" style="opacity: 0; visibility: hidden;">
+      [INIT] Project X3r0Day<br>
+      WELCOME, ENJOY YOUR STAY<br>
+      TOOLS COMMING SOON...<br>
+    </div>
+
+    <a href="#writeups" class="scroll-indicator" style="opacity: 0; visibility: hidden;">
+      <span class="scroll-text">Scroll</span>
+      <div class="scroll-line"></div>
+    </a>
+  </section>
+
+  <section class="writeups-section" id="writeups">
+    
+    <div class="section-header reveal-on-scroll" style="opacity: 0; clip-path: circle(0%);">
+      <h2 class="section-title">Research by Project X3r0Day</h2>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="writeups-grid">
+      
+      <a href="https://xerosec.medium.com/local-code-execution-via-git-workspace-poisoning-fsmonitor-7041a2560395" target="_blank" class="writeup-card reveal-on-scroll" style="opacity: 0; clip-path: circle(0%);">
+        <div class="card-curvy-bg"></div>
+        <div class="card-content">
+          <div class="card-meta">
+            <span>SERVER ABUSE EXPLOIT</span>
+            <span>Research</span>
+          </div>
+          <h3 class="card-title">Local Code Execution via Git Workspace Poisoning (fsmonitor)</h3>
+        </div>
+        <div class="card-footer">
+          <span>Read Proof of Concept</span>
+          <svg class="bespoke-arrow" viewBox="0 0 40 20" fill="none">
+            <path d="M0,10 C15,10 25,10 35,10 M28,4 C32,8 34,10 37,10 C34,10 32,12 28,16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </a>
+
+      <a href="https://github.com/X3r0Day/FUD-C2-Trojan" class="writeup-card reveal-on-scroll" style="opacity: 0; clip-path: circle(0%);">
+        <div class="card-curvy-bg"></div>
+        <div class="card-content">
+          <div class="card-meta">
+            <span>MALDEV</span>
+            <span>Exploitation</span>
+          </div>
+          <h3 class="card-title">Insect V2, '90s malware redisigned</h3>
+        </div>
+        <div class="card-footer">
+          <span>Visit Github</span>
+          <svg class="bespoke-arrow" viewBox="0 0 40 20" fill="none">
+            <path d="M0,10 C15,10 25,10 35,10 M28,4 C32,8 34,10 37,10 C34,10 32,12 28,16" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      
+      const ffBtn = document.getElementById('ffAnimBtn');
+      let isFastForwarding = false;
+      
+      const unlockScroll = () => {
+        document.body.classList.add('scroll-unlocked');
+        document.documentElement.classList.add('scroll-unlocked');
+        if (ffBtn) ffBtn.classList.add('hidden');
+      };
+
+      const animTimer = setTimeout(unlockScroll, 10000);
+
+      if (ffBtn && typeof document.getAnimations === 'function') {
+        ffBtn.addEventListener('click', () => {
+          if (isFastForwarding) return;
+          isFastForwarding = true;
+          
+          clearTimeout(animTimer);
+          ffBtn.classList.add('hidden');
+          
+          document.body.classList.add('ff-active'); 
+
+          const animations = document.getAnimations();
+          const finiteAnims = [];
+          const infiniteAnims = [];
+
+          animations.forEach(anim => {
+            try {
+              const timing = anim.effect.getTiming();
+              if (timing.iterations === Infinity) {
+                infiniteAnims.push(anim);
+              } else {
+                finiteAnims.push(anim);
+              }
+              anim.playbackRate = 15; 
+            } catch(e) {}
+          });
+
+          Promise.race([
+            Promise.allSettled(finiteAnims.map(a => a.finished)),
+            new Promise(res => setTimeout(res, 800))
+          ]).finally(() => {
+            
+            infiniteAnims.forEach(anim => {
+              try { anim.playbackRate = 1; } catch(e) {}
+            });
+            
+            document.body.classList.remove('ff-active');
+            unlockScroll();
+          });
+        });
+      } else if (ffBtn) {
+        ffBtn.addEventListener('click', () => {
+          clearTimeout(animTimer);
+          unlockScroll();
+        });
+      }
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15 });
+
+      document.querySelectorAll('.reveal-on-scroll').forEach((el) => {
+        observer.observe(el);
+      });
+    });
+  </script>
 
 </body>
 </html>
