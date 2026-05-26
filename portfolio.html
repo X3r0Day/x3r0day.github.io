@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X3r0Day - Security Research and Code</title>
+    <style>
+        body {
+            font-family: Georgia, "Times New Roman", Times, serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background-color: #fdfdfa;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 0 24px;
+        }
+        h1, h2, h3 {
+            font-weight: normal;
+            color: #000000;
+            margin-top: 1.6em;
+            margin-bottom: 0.6em;
+        }
+        h1 {
+            font-size: 2.2em;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+        h2 {
+            font-size: 1.4em;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 4px;
+        }
+        a {
+            color: #0000ee;
+            text-decoration: underline;
+        }
+        a:visited {
+            color: #551a8b;
+        }
+        a:hover {
+            color: #ff0000;
+        }
+        p {
+            margin: 0 0 1.2em 0;
+        }
+        ul {
+            padding-left: 20px;
+            margin: 0 0 1.5em 0;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .nav {
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        .nav a {
+            margin-right: 15px;
+            text-decoration: none;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .project-item {
+            margin-bottom: 28px;
+        }
+        .project-title {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 2px;
+        }
+        .project-meta {
+            font-family: monospace;
+            font-size: 0.85em;
+            color: #555555;
+            margin-bottom: 8px;
+        }
+        .footer {
+            margin-top: 60px;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+            font-size: 0.85em;
+            color: #555555;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>X3r0Day</h1>
+
+    <div class="nav">
+        <a href="#about">About</a> | 
+        <a href="#projects">Projects</a> | 
+        <a href="#skills">Tooling</a> | 
+        <a href="#contact">Contact</a>
+    </div>
+
+    <div id="about">
+        <h2>About Me</h2>
+        <p>
+            I am a security researcher and bug hunter based in India. I write code, analyze software, and focus primarily on web application vulnerabilities, exploitation methodologies, and wild CVE hunting.
+        </p>
+    </div>
+
+    <div id="projects">
+        <h2>Public Projects &amp; Code</h2>
+        
+        <div class="project-item">
+            <div class="project-title">
+                <a href="https://github.com/NCRIF/Specter" target="_blank">NCRIF/Specter</a>
+            </div>
+            <div class="project-meta">Language: Python / Category: Recon &amp; Scanning</div>
+            <p>
+                An active port scanner and subdomain enumerator built using Python's asyncio. It is designed to handle heavy concurrent TCP traffic to map out attack surfaces quickly, keeping its focus on speed during initial host discovery.
+            </p>
+        </div>
+
+        <div class="project-item">
+            <div class="project-title">
+                <a href="https://github.com/X3r0Day/XeroDay-APISniffer" target="_blank">X3r0Day/XeroDay-APISniffer</a>
+            </div>
+            <div class="project-meta">Language: Python / Category: OSINT</div>
+            <p>
+                A scanner utility that automates searching public GitHub repositories. It monitors commits for accidentally leaked API keys, authentication tokens, and credentials so they can be rotated before being abused.
+            </p>
+        </div>
+
+        <div class="project-item">
+            <div class="project-title">
+                <a href="https://github.com/X3r0Day/InformationDisclosure" target="_blank">X3r0Day/InformationDisclosure</a>
+            </div>
+            <div class="project-meta">Language: Python / Category: Web Archive Analysis</div>
+            <p>
+                A command-line script that queries the Web Archive's CDX database. It parses historical indexes of target domains to identify forgotten directory paths, backups, or configuration files that are no longer accessible on the live web.
+            </p>
+        </div>
+
+        <div class="project-item">
+            <div class="project-title">
+                <a href="https://github.com/X3r0Day/WebShame" target="_blank">X3r0Day/WebShame</a>
+            </div>
+            <div class="project-meta">Language: Python / Category: Web Auditing</div>
+            <p>
+                A basic auditing tool that checks targeted servers for missing security response headers, weak SSL protocols, and exposed directories to point out baseline defensive oversights.
+            </p>
+        </div>
+
+        <div class="project-item">
+            <div class="project-title">
+                <a href="https://github.com/X3r0Day/X3r0Day-Research" target="_blank">X3r0Day/X3r0Day-Research</a>
+            </div>
+            <div class="project-meta">Category: Research &amp; Exploits</div>
+            <p>
+                An open repository of my security research, analysis notes, and proof-of-concept scripts detailing web application vulnerabilities and technical writeups.
+            </p>
+        </div>
+    </div>
+
+    <div id="skills">
+        <h2>Technical Summary</h2>
+        <ul>
+            <li><strong>Programming:</strong> Python, C, Bash, Assembly</li>
+            <li><strong>Interests:</strong> Web pentesting, vulnerability research, OSINT scripting</li>
+        </ul>
+    </div>
+
+    <div id="contact">
+        <h2>Contact</h2>
+        <p>
+            If you want to discuss research or get in touch:
+        </p>
+        <ul>
+            <li>Email: <a href="mailto:cr4n@duck.com">cr4n@duck.com</a></li>
+            <li>GitHub: <a href="https://github.com/X3r0Day" target="_blank">github.com/X3r0Day</a></li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p>Last modified: May 2026</p>
+    </div>
+
+</body>
+</html>
