@@ -51,7 +51,8 @@ function updateClock() {
 }
 
 const writeupsData = [
-    "FSMonitor LRCE.md"
+    "FSMonitor LRCE.md",
+    "Bun File Traversal.md"
 ];
 
 
