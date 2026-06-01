@@ -51,6 +51,7 @@ function updateClock() {
 }
 
 const writeupsData = [
+    "Hermes Agent Unauth RCE.md",
     "FSMonitor LRCE.md",
     "Bun File Traversal.md"
 ];
