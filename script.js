@@ -1,10 +1,4 @@
 const projectData = {
-    camsnipe: {
-        icon: "👁️", title: "CamSnipe Hub", badge: "LIVE", isLive: true,
-        desc: "Online directory of exposed IP cameras. Mapping the internet's eyes.",
-        features: ["Live stream aggregation without auth walls", "Device fingerprinting and ID", "ISP/Location metadata extraction"],
-        url: "https://camsnipe-hub-ipym.onrender.com/"
-    },
     webshame: {
         icon: "🔑", title: "WebShame", badge: "LIVE", isLive: true,
         desc: "Wall of shame for leaked secrets pushed to public GitHub repos. Free API keys anyone?",
