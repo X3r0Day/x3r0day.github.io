@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | X3r0Day</title>
+    <meta name="description" content="Security research, technical writeups, and proof-of-concept notes by X3r0Day.">
+    <link rel="canonical" href="https://x3r0day.me/blog/">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/blog/blog.css">
+</head>
+<body class="blog-page">
+    <main class="window outset blog-window">
+        <div class="title-bar">
+            <div class="title-text"><span aria-hidden="true">📁</span> C:\X3r0Day\Blog</div>
+        </div>
+        <nav class="menu-bar" aria-label="Site navigation">
+            <a href="/">Home</a>
+            <a href="https://github.com/X3r0Day">GitHub</a>
+        </nav>
+        <div class="window-content inset blog-list">
+            <h1>Blog</h1>
+            <p>Security research and technical writeups.</p>
+            <ul>
+                <li class="pub-item">
+                    <h2><a href="/blog/hermes-agent-unauth-rce/">Hermes Agent: Unauthenticated RCE and Credential Theft</a></h2>
+                    <p>A dashboard session token exposed in HTML leads to shell access and leaked API keys.</p>
+                </li>
+                <li class="pub-item">
+                    <h2><a href="/blog/fsmonitor-lrce/">Local Code Execution via Git Workspace Poisoning (FSMonitor)</a></h2>
+                    <p>How a poisoned Git configuration triggers code execution in editors and Git-aware shell prompts.</p>
+                </li>
+                <li class="pub-item">
+                    <h2><a href="/blog/bun-file-traversal/">Arbitrary File Write via Dependency Aliases in bun install</a></h2>
+                    <p>Dependency alias path traversal writes outside the project, even with scripts disabled.</p>
+                </li>
+            </ul>
+        </div>
+    </main>
+</body>
+</html>

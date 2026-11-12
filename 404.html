@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page not found | X3r0Day</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/blog/blog.css">
+</head>
+<body class="blog-page">
+    <main class="window outset blog-window">
+        <div class="title-bar">
+            <div class="title-text">Page not found</div>
+        </div>
+        <div class="window-content inset blog-list">
+            <h1>Page not found</h1>
+            <p>The writeups have moved to <a href="/blog/">the blog</a>.</p>
+            <p><a href="/">Back to home</a></p>
+        </div>
+    </main>
+    <script>
+        const oldPosts = new Map([
+            ['Hermes Agent Unauth RCE', 'hermes-agent-unauth-rce'],
+            ['FSMonitor LRCE', 'fsmonitor-lrce'],
+            ['Bun File Traversal', 'bun-file-traversal']
+        ]);
+        let oldPath = location.pathname;
+        try {
+            oldPath = decodeURIComponent(oldPath);
+        } catch (_) {
+            // Leave malformed URLs on the not-found page.
+        }
+        const match = oldPath.match(/^\/writeups\/([^/]+)\.(md|html)$/);
+        const slug = match && oldPosts.get(match[1]);
+        if (slug) {
+            location.replace(`/blog/${slug}/${location.search}${location.hash}`);
+        } else if (oldPath === '/writeups/' || oldPath === '/writeups/index.html') {
+            location.replace(`/blog/${location.search}${location.hash}`);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+.blog-page {
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+    padding: 32px 16px;
+    user-select: text;
+}
+
+.blog-window {
+    position: relative;
+    width: 100%;
+    max-width: 960px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+.blog-window .title-bar {
+    cursor: default;
+}
+
+.blog-window .title-text {
+    overflow-wrap: anywhere;
+}
+
+.blog-window .menu-bar a {
+    color: inherit;
+}
+
+.blog-page a:focus-visible {
+    outline: 2px dotted var(--win-title);
+    outline-offset: 3px;
+}
+
+.blog-list {
+    display: block;
+    padding: 24px;
+}
+
+.blog-list > p {
+    margin: 8px 0 24px;
+}
+
+.blog-list ul {
+    list-style: none;
+}
+
+.blog-list h2 {
+    font-size: 21px;
+    margin-bottom: 8px;
+}
+
+.blog-list .pub-item {
+    padding: 16px;
+}
+
+.blog-list p {
+    line-height: 1.5;
+}
+
+#notepad-content {
+    min-width: 0;
+    margin: 4px;
+    padding: 24px;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+#notepad-content :not(pre) > code {
+    width: auto;
+}
+
+#notepad-content pre {
+    overflow-wrap: normal;
+}
+
+#notepad-content blockquote {
+    border-left: 3px solid var(--win-dark);
+    padding-left: 16px;
+}
+
+#notepad-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+#notepad-content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+}
+
+#notepad-content th,
+#notepad-content td {
+    border: 1px solid var(--win-dark);
+    padding: 6px;
+}
+
+@media (max-width: 600px) {
+    .blog-page { padding: 12px 8px; }
+    .blog-list, #notepad-content { padding: 16px; }
+    #notepad-content h1 { font-size: 1.6em; }
+}
