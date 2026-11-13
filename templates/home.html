@@ -1,0 +1,56 @@
+<main id="main" class="home-page wrap">
+    <header class="personal-intro">
+        <div class="intro-name"><p class="bracket-label">Independent security research / India</p><h1>X3r0Day<span>.</span></h1><p class="intro-summary">I find bugs in the software people use. These are the writeups, source notes, and tools that come out of it.</p><div class="intro-links"><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div></div>
+        <figure class="scene-frame hero-scene" role="img" aria-label="Animated ASCII art of an aurora above a mountain fjord, with a lit cabin reflected in the water.">
+            <div class="scene-view"><ascii-art class="scene-art" piece="aurora-fjord" aria-hidden="true"><pre class="scene-fallback" aria-hidden="true">      .        .            .        .
+  .        .        .   .       .        .
+    .           .         .        .
+  ______________________________________
+  ~   ~    ~    ~    ~    ~    ~    ~  ~</pre></ascii-art></div>
+        </figure>
+    </header>
+
+    <section class="featured-section" id="research" aria-labelledby="featured-title">
+        <div class="section-heading"><h2 id="featured-title" class="bracket-label">Latest research</h2><span>November 12, 2026</span></div>
+        {{featured}}
+    </section>
+
+    <section class="research-section" aria-labelledby="research-title">
+        <div class="section-heading"><h2 id="research-title">More findings</h2><a class="text-link" href="/blog/">All writeups <span aria-hidden="true">↗</span></a></div>
+        <div class="research-list">{{research}}</div>
+    </section>
+
+    <section class="archive-section" id="more-research" aria-labelledby="archive-title"><div class="section-heading"><h2 id="archive-title">Earlier work &amp; disclosures</h2><span>From the research archive</span></div><div class="archive-list">{{archive}}</div></section>
+
+    <section class="tools-section" id="tools" aria-labelledby="tools-title">
+        <div class="section-heading"><h2 id="tools-title">Tools I've built</h2><a class="text-link" href="https://github.com/X3r0Day">All repositories <span aria-hidden="true">↗</span></a></div>
+        <div class="tool-grid">
+            <details class="tool" name="tools" open><summary><span>WebShame</span><span class="tool-toggle" aria-hidden="true">−</span></summary><div class="tool-body"><p>A public-repository monitor for accidentally exposed secrets, with a live dashboard and repository tracking.</p><div class="tool-links"><a href="https://github.com/X3r0Day/WebShame">Source ↗</a><a href="https://x3r0day.me/WebShame/">Dashboard ↗</a></div></div></details>
+            <details class="tool" name="tools"><summary><span>API Sniffer</span><span class="tool-toggle" aria-hidden="true">+</span></summary><div class="tool-body"><p>A GitHub scanner for exposed API keys and tokens, with entropy checks to reduce the noise.</p><div class="tool-links"><a href="https://github.com/X3r0Day/XeroDay-APISniffer">Source ↗</a></div></div></details>
+            <details class="tool" name="tools"><summary><span>Specter</span><span class="tool-toggle" aria-hidden="true">+</span></summary><div class="tool-body"><p>Asynchronous Python reconnaissance for port scanning and subdomain discovery, with structured output.</p><div class="tool-links"><a href="https://github.com/X3r0Day/X3r0Day-Specter">Source ↗</a></div></div></details>
+            <details class="tool" name="tools"><summary><span>HashLock</span><span class="tool-toggle" aria-hidden="true">+</span></summary><div class="tool-body"><p>An offline password manager with encrypted local vaults. No accounts and no cloud service in the middle.</p><div class="tool-links"><a href="https://github.com/X3r0Day/HashLock">Source ↗</a><a href="https://github.com/X3r0Day/HashLock/releases">Releases ↗</a></div></div></details>
+            <details class="tool" name="tools"><summary><span>InfoDisclosure</span><span class="tool-toggle" aria-hidden="true">+</span></summary><div class="tool-body"><p>A Wayback CDX research tool for forgotten backups, environment files, and historical configuration paths.</p><div class="tool-links"><a href="https://github.com/X3r0Day/InformationDisclosure">Source ↗</a></div></div></details>
+        </div>
+    </section>
+
+    <section class="about-section" id="about" aria-labelledby="about-title"><div><p class="small-label">Behind the research</p><h2 id="about-title">A little context.</h2></div><div class="about-copy"><p>I'm X3r0Day, a security researcher and bug hunter from India. Most of my time goes into reading source, following odd behavior, and working out where a small assumption becomes a real bug.</p><p>This site collects the useful parts: findings, reproducible examples, disclosure details, and the tools I've made along the way.</p><div class="about-bottom"><span>Python / C / Bash / Assembly</span><a href="mailto:cr4n@duck.com">cr4n@duck.com ↗</a></div></div></section>
+</main>
+
+<section class="watch-section" aria-labelledby="watch-title">
+    <div class="wrap">
+        <div class="watch-head">
+            <div class="watch-heading">
+                <h2 id="watch-title">After hours</h2>
+                <p>A random scene, picked fresh on every visit.</p>
+            </div>
+            <button class="watch-shuffle" type="button" data-watch-shuffle>Another scene <span aria-hidden="true">↻</span></button>
+        </div>
+        <figure class="scene-frame watch-figure" role="img" aria-label="ASCII art of a starry sky above water." data-watch-figure>
+            <div class="scene-view"><ascii-art class="scene-art" data-watch-art aria-hidden="true"><pre class="watch-placeholder scene-fallback" aria-hidden="true">                  .        *              .
+      .                                  .
+                              .                     *
+  ______________________________________________________
+  ~   ~    ~     ~    ~      ~     ~    ~    ~     ~  ~</pre></ascii-art></div>
+        </figure>
+    </div>
+</section>

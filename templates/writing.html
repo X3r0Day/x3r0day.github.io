@@ -1,0 +1,11 @@
+<main id="main" class="writing-page wrap">
+    <header class="journal-heading"><p class="small-label">Research by X3r0Day</p><h1>Writeups<span class="heading-count" aria-label="{{count}} entries">{{count}}</span></h1><p>The finding, the reproducer, and the source behind it.</p></header>
+    <div class="writing-controls" hidden>
+        <div class="filter-tabs" role="group" aria-label="Filter writing"><button type="button" aria-pressed="true" data-filter="all">Everything</button><button type="button" aria-pressed="false" data-filter="Editor security">Editors</button><button type="button" aria-pressed="false" data-filter="Supply chain">Supply chain</button><button type="button" aria-pressed="false" data-filter="Application security">Applications</button><button type="button" aria-pressed="false" data-filter="Developer tooling">Dev tools</button></div>
+        <label class="writing-search"><span class="sr-only">Search writing</span><input type="search" placeholder="Find a writeup" name="q" autocomplete="off"></label>
+    </div>
+    <p class="filter-status sr-only" role="status" aria-live="polite"></p>
+    <div class="writing-list">{{posts}}</div>
+    <div class="empty-writing" hidden><h2>No writeups found.</h2><p>Try another word, or clear the filters.</p><button class="button" type="button" data-reset-filters>Show every entry</button></div>
+    <section class="archive-section" id="more-research" aria-labelledby="archive-title"><div class="section-heading"><h2 id="archive-title">Earlier work &amp; disclosures</h2><span>From the research archive</span></div><div class="archive-list">{{archive}}</div></section>
+</main>

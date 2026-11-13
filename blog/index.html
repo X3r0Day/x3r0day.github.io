@@ -2,44 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog | X3r0Day</title>
-    <meta name="description" content="Security research, technical writeups, and proof-of-concept notes by X3r0Day.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1c1d20">
+    <title>The notebook | X3r0Day</title>
+    <meta name="description" content="Research notes by X3r0Day. Bugs, reproducers, and the code paths behind them.">
+    <meta name="author" content="X3r0Day">
+    <meta property="og:title" content="The notebook">
+    <meta property="og:description" content="Research notes by X3r0Day. Bugs, reproducers, and the code paths behind them.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://x3r0day.me/blog/">
     <link rel="canonical" href="https://x3r0day.me/blog/">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/blog/blog.css">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/style.css?v=b345641a10a2">
+
+    <script defer src="/script.js?v=31e9c72a52f7"></script>
+
 </head>
-<body class="blog-page">
-    <main class="window outset blog-window">
-        <div class="title-bar">
-            <div class="title-text"><span aria-hidden="true">📁</span> C:\X3r0Day\Blog</div>
-        </div>
-        <nav class="menu-bar" aria-label="Site navigation">
-            <a href="/">Home</a>
-            <a href="https://github.com/X3r0Day">GitHub</a>
-        </nav>
-        <div class="window-content inset blog-list">
-            <h1>Blog</h1>
-            <p>Security research and technical writeups.</p>
-            <ul>
-                <li class="pub-item">
-                    <h2><a href="/blog/emacs-dir-locals-code-execution/">Opening a README Was Enough: Code Execution Through Emacs Directory Locals</a></h2>
-                    <p>A directory-local auto-mode-alist validation bypass executes code on file open. Root cause, both PoCs, and the upstream fix for 31.2.</p>
-                </li>
-                <li class="pub-item">
-                    <h2><a href="/blog/hermes-agent-unauth-rce/">Hermes Agent: Unauthenticated RCE and Credential Theft</a></h2>
-                    <p>A dashboard session token exposed in HTML leads to shell access and leaked API keys.</p>
-                </li>
-                <li class="pub-item">
-                    <h2><a href="/blog/fsmonitor-lrce/">Local Code Execution via Git Workspace Poisoning (FSMonitor)</a></h2>
-                    <p>How a poisoned Git configuration triggers code execution in editors and Git-aware shell prompts.</p>
-                </li>
-                <li class="pub-item">
-                    <h2><a href="/blog/bun-file-traversal/">Arbitrary File Write via Dependency Aliases in bun install</a></h2>
-                    <p>Dependency alias path traversal writes outside the project, even with scripts disabled.</p>
-                </li>
-            </ul>
-        </div>
-    </main>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner wrap">
+    <a class="brand" href="/" aria-label="X3r0Day home">X3r0Day<span class="brand-suffix">Research &amp; notes</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <a href="/">Research</a>
+        <a href="/blog/" aria-current="page">Writeups</a>
+        <a href="/#tools">Projects</a><a href="/#about">About</a>
+    </nav>
+    <div class="header-actions"><button class="search-trigger" type="button" aria-label="Search research" aria-controls="site-search" hidden><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="menu-toggle" aria-controls="site-nav" aria-expanded="false" hidden>Menu <span aria-hidden="true">+</span></button></div>
+</div></header>
+<main id="main" class="writing-page wrap">
+    <header class="journal-heading"><p class="small-label">Research by X3r0Day</p><h1>Writeups<span class="heading-count" aria-label="4 entries">4</span></h1><p>The finding, the reproducer, and the source behind it.</p></header>
+    <div class="writing-controls" hidden>
+        <div class="filter-tabs" role="group" aria-label="Filter writing"><button type="button" aria-pressed="true" data-filter="all">Everything</button><button type="button" aria-pressed="false" data-filter="Editor security">Editors</button><button type="button" aria-pressed="false" data-filter="Supply chain">Supply chain</button><button type="button" aria-pressed="false" data-filter="Application security">Applications</button><button type="button" aria-pressed="false" data-filter="Developer tooling">Dev tools</button></div>
+        <label class="writing-search"><span class="sr-only">Search writing</span><input type="search" placeholder="Find a writeup" name="q" autocomplete="off"></label>
+    </div>
+    <p class="filter-status sr-only" role="status" aria-live="polite"></p>
+    <div class="writing-list"><article class="research-entry writing-card" data-topic="Editor security" data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security upstream fix"><div class="entry-copy"><div class="entry-meta"><span>Editor security</span><span>November 12, 2026</span></div><h2><a href="/blog/emacs-dir-locals-code-execution/">Emacs: code execution on file open</a></h2><p>An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.</p><div class="entry-links"><a class="read-link" href="/blog/emacs-dir-locals-code-execution/">Read the writeup <span aria-hidden="true">↗</span></a><span>8 min read</span></div></div><figure class="source-excerpt"><figcaption><a href="/blog/emacs-dir-locals-code-execution/#the-matcher-that-did-more-than-match">lisp/files.el</a><span>From the writeup</span></figcaption><pre tabindex="0" aria-label="Source excerpt from lisp/files.el"><code class="language-elisp"><span>(when newmode</span>
+<span>  (when mode</span>
+<span class="code-focus">    (set-auto-mode-0 mode t))</span>
+<span>  (setq mode newmode))</span></code></pre><p>The matcher called the remembered function before the caller validated the returned mode.</p></figure></article>
+<article class="research-entry writing-card" data-topic="Application security" data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security hermes agent"><div class="entry-copy"><div class="entry-meta"><span>Application security</span><span>Research note</span></div><h2><a href="/blog/hermes-agent-unauth-rce/">Hermes Agent: unauthenticated RCE</a></h2><p>An exposed session token in Hermes Agent turns a dashboard visit into unauthenticated code execution and credential access.</p><div class="entry-links"><a class="read-link" href="/blog/hermes-agent-unauth-rce/">Read the writeup <span aria-hidden="true">↗</span></a><span>6 min read</span></div></div><figure class="source-excerpt"><figcaption><a href="/blog/hermes-agent-unauth-rce/#why-it-happens">Dashboard HTML</a><span>From the writeup</span></figcaption><pre tabindex="0" aria-label="Source excerpt from Dashboard HTML"><code class="language-html"><span>&lt;script&gt;</span>
+<span class="code-focus">  window.__HERMES_SESSION_TOKEN__ = &quot;abc123...&quot;;</span>
+<span>&lt;/script&gt;</span></code></pre><p>With --insecure enabled, the page exposed the token used to authorize subsequent API requests.</p></figure></article>
+<article class="research-entry writing-card" data-topic="Supply chain" data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain bun"><div class="entry-copy"><div class="entry-meta"><span>Supply chain</span><span>May 2026</span></div><h2><a href="/blog/bun-file-traversal/">Bun install: arbitrary file write</a></h2><p>A dependency alias takes Bun outside node_modules. Arbitrary file writes, even with lifecycle scripts disabled.</p><div class="entry-links"><a class="read-link" href="/blog/bun-file-traversal/">Read the writeup <span aria-hidden="true">↗</span></a><span>3 min read</span></div></div><figure class="source-excerpt"><figcaption><a href="/blog/bun-file-traversal/#why-it-happens">package.json</a><span>From the writeup</span></figcaption><pre tabindex="0" aria-label="Source excerpt from package.json"><code class="language-json"><span>{</span>
+<span>  &quot;dependencies&quot;: {</span>
+<span class="code-focus">    &quot;/tmp&quot;: &quot;file:./evil.tgz&quot;</span>
+<span>  }</span>
+<span>}</span></code></pre><p>An absolute dependency alias became an installation destination outside node_modules.</p></figure></article>
+<article class="research-entry writing-card" data-topic="Developer tooling" data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling git fsmonitor"><div class="entry-copy"><div class="entry-meta"><span>Developer tooling</span><span>May 2026</span></div><h2><a href="/blog/fsmonitor-lrce/">Git FSMonitor: workspace poisoning</a></h2><p>When Git-aware editors trust a poisoned workspace, a routine status check can become local code execution.</p><div class="entry-links"><a class="read-link" href="/blog/fsmonitor-lrce/">Read the writeup <span aria-hidden="true">↗</span></a><span>4 min read</span></div></div><figure class="source-excerpt"><figcaption><a href="/blog/fsmonitor-lrce/#step-3-configure-git">Git configuration</a><span>From the writeup</span></figcaption><pre tabindex="0" aria-label="Source excerpt from Git configuration"><code class="language-bash"><span class="code-focus">git config core.fsmonitor &#39;.git/hooks/fsmonitor-watchman&#39;</span></code></pre><p>A poisoned workspace configuration can execute a local hook when an editor checks Git status.</p></figure></article></div>
+    <div class="empty-writing" hidden><h2>No writeups found.</h2><p>Try another word, or clear the filters.</p><button class="button" type="button" data-reset-filters>Show every entry</button></div>
+    <section class="archive-section" id="more-research" aria-labelledby="archive-title"><div class="section-heading"><h2 id="archive-title">Earlier work &amp; disclosures</h2><span>From the research archive</span></div><div class="archive-list"><article class="archive-entry"><p>Red-team research</p><h3><a href="https://github.com/X3r0Day/FUD-C2-Framework.git">Insect V2 <span aria-hidden="true">↗</span></a></h3><p>An earlier red-team project revisiting 1990s malware, preserved from the original research collection.</p><a class="archive-source" href="https://github.com/X3r0Day/FUD-C2-Framework.git">View original work ↗</a></article>
+<article class="archive-entry"><p>Developer tooling</p><h3><a href="https://github.com/X3r0Day/X3r0Day-Research">Workspace trust &amp; Python .pth files <span aria-hidden="true">↗</span></a></h3><p>The research collection covering VS Code Python initialization and Git FSMonitor workspace poisoning.</p><a class="archive-source" href="https://github.com/X3r0Day/X3r0Day-Research">View original work ↗</a></article>
+<article class="archive-entry"><p>Responsible disclosure</p><h3><a href="https://x.com/X3r0DaySec/status/2063002547561115826">A data-exposure disclosure to CERT-In <span aria-hidden="true">↗</span></a></h3><p>A coordinated report concerning exposed personal data on an Indian government website.</p><a class="archive-source" href="https://x.com/X3r0DaySec/status/2063002547561115826">View original work ↗</a></article></div></section>
+</main>
+
+<footer class="site-footer wrap"><a class="footer-name" href="/">X3r0Day<span> / independent research</span></a><div><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="https://x.com/X3r0DaySec">X / Twitter ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div><span>© 2026</span></footer>
+<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results"><li data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security"><a href="/blog/emacs-dir-locals-code-execution/"><span>Editor security</span><strong>Emacs: code execution on file open</strong><span aria-hidden="true">↗</span></a></li><li data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security"><a href="/blog/hermes-agent-unauth-rce/"><span>Application security</span><strong>Hermes Agent: unauthenticated RCE</strong><span aria-hidden="true">↗</span></a></li><li data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain"><a href="/blog/bun-file-traversal/"><span>Supply chain</span><strong>Bun install: arbitrary file write</strong><span aria-hidden="true">↗</span></a></li><li data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling"><a href="/blog/fsmonitor-lrce/"><span>Developer tooling</span><strong>Git FSMonitor: workspace poisoning</strong><span aria-hidden="true">↗</span></a></li><li data-search="insect v2 an earlier red-team project revisiting 1990s malware, preserved from the original research collection. red-team research"><a href="https://github.com/X3r0Day/FUD-C2-Framework.git"><span>Red-team research</span><strong>Insect V2</strong><span aria-hidden="true">↗</span></a></li><li data-search="workspace trust &amp; python .pth files the research collection covering vs code python initialization and git fsmonitor workspace poisoning. developer tooling"><a href="https://github.com/X3r0Day/X3r0Day-Research"><span>Developer tooling</span><strong>Workspace trust &amp; Python .pth files</strong><span aria-hidden="true">↗</span></a></li><li data-search="a data-exposure disclosure to cert-in a coordinated report concerning exposed personal data on an indian government website. responsible disclosure"><a href="https://x.com/X3r0DaySec/status/2063002547561115826"><span>Responsible disclosure</span><strong>A data-exposure disclosure to CERT-In</strong><span aria-hidden="true">↗</span></a></li></ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>
 </body>
 </html>

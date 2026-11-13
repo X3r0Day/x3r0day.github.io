@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Insect V2",
+    "description": "An earlier red-team project revisiting 1990s malware, preserved from the original research collection.",
+    "label": "Red-team research",
+    "url": "https://github.com/X3r0Day/FUD-C2-Framework.git"
+  },
+  {
+    "title": "Workspace trust & Python .pth files",
+    "description": "The research collection covering VS Code Python initialization and Git FSMonitor workspace poisoning.",
+    "label": "Developer tooling",
+    "url": "https://github.com/X3r0Day/X3r0Day-Research"
+  },
+  {
+    "title": "A data-exposure disclosure to CERT-In",
+    "description": "A coordinated report concerning exposed personal data on an Indian government website.",
+    "label": "Responsible disclosure",
+    "url": "https://x.com/X3r0DaySec/status/2063002547561115826"
+  }
+]

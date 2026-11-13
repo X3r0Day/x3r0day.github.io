@@ -1,0 +1,78 @@
+[
+  {
+    "slug": "emacs-dir-locals-code-execution",
+    "file": "Emacs Dir Locals Code Execution.md",
+    "title": "Emacs: code execution on file open",
+    "description": "An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.",
+    "topic": "Editor security",
+    "label": "Upstream fix",
+    "date": "2026-11-12",
+    "dateLabel": "November 12, 2026",
+    "color": "iris",
+    "preview": {
+      "contains": "(when newmode",
+      "source": "lisp/files.el",
+      "anchor": "the-matcher-that-did-more-than-match",
+      "focus": "(set-auto-mode-0 mode t)",
+      "caption": "The matcher called the remembered function before the caller validated the returned mode."
+    },
+    "resources": [{ "label": "Upstream advisory", "url": "https://www.openwall.com/lists/oss-security/2026/11/11/7" }]
+  },
+  {
+    "slug": "hermes-agent-unauth-rce",
+    "file": "Hermes Agent Unauth RCE.md",
+    "title": "Hermes Agent: unauthenticated RCE",
+    "description": "An exposed session token in Hermes Agent turns a dashboard visit into unauthenticated code execution and credential access.",
+    "topic": "Application security",
+    "label": "Hermes Agent",
+    "date": null,
+    "dateLabel": "Research note",
+    "color": "peach",
+    "preview": {
+      "contains": "window.__HERMES_SESSION_TOKEN__",
+      "source": "Dashboard HTML",
+      "anchor": "why-it-happens",
+      "focus": "window.__HERMES_SESSION_TOKEN__",
+      "caption": "With --insecure enabled, the page exposed the token used to authorize subsequent API requests."
+    },
+    "resources": [{ "label": "Proof of concept", "url": "https://github.com/X3r0Day/Unauthenticated-Hermes-RCE" }]
+  },
+  {
+    "slug": "bun-file-traversal",
+    "file": "Bun File Traversal.md",
+    "title": "Bun install: arbitrary file write",
+    "description": "A dependency alias takes Bun outside node_modules. Arbitrary file writes, even with lifecycle scripts disabled.",
+    "topic": "Supply chain",
+    "label": "Bun",
+    "date": "2026-05",
+    "dateLabel": "May 2026",
+    "color": "sage",
+    "preview": {
+      "contains": "\"dependencies\"",
+      "source": "package.json",
+      "anchor": "why-it-happens",
+      "focus": "\"/tmp\"",
+      "caption": "An absolute dependency alias became an installation destination outside node_modules."
+    },
+    "resources": [{ "label": "Proof of concept", "url": "https://github.com/X3r0Day/BunPoCTest" }]
+  },
+  {
+    "slug": "fsmonitor-lrce",
+    "file": "FSMonitor LRCE.md",
+    "title": "Git FSMonitor: workspace poisoning",
+    "description": "When Git-aware editors trust a poisoned workspace, a routine status check can become local code execution.",
+    "topic": "Developer tooling",
+    "label": "Git FSMonitor",
+    "date": "2026-05",
+    "dateLabel": "May 2026",
+    "color": "blue",
+    "preview": {
+      "contains": "git config core.fsmonitor",
+      "source": "Git configuration",
+      "anchor": "step-3-configure-git",
+      "focus": "core.fsmonitor",
+      "caption": "A poisoned workspace configuration can execute a local hook when an editor checks Git status."
+    },
+    "resources": [{ "label": "Original publication", "url": "https://xerosec.medium.com/local-code-execution-via-git-workspace-poisoning-fsmonitor-7041a2560395" }]
+  }
+]

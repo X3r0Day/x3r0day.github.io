@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://x3r0day.me/sitemap.xml

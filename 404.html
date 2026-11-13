@@ -2,41 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1c1d20">
     <title>Page not found | X3r0Day</title>
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/blog/blog.css">
+    <meta name="description" content="This page could not be found. Explore security research and writing by X3r0Day.">
+    <meta name="author" content="X3r0Day">
+    <meta property="og:title" content="Page not found">
+    <meta property="og:description" content="This page could not be found. Explore security research and writing by X3r0Day.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://x3r0day.me/404.html">
+    <link rel="canonical" href="https://x3r0day.me/404.html">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/style.css?v=b345641a10a2">
+    <meta name="robots" content="noindex">
+    <script defer src="/script.js?v=31e9c72a52f7"></script>
+
 </head>
-<body class="blog-page">
-    <main class="window outset blog-window">
-        <div class="title-bar">
-            <div class="title-text">Page not found</div>
-        </div>
-        <div class="window-content inset blog-list">
-            <h1>Page not found</h1>
-            <p>The writeups have moved to <a href="/blog/">the blog</a>.</p>
-            <p><a href="/">Back to home</a></p>
-        </div>
-    </main>
-    <script>
-        const oldPosts = new Map([
-            ['Hermes Agent Unauth RCE', 'hermes-agent-unauth-rce'],
-            ['FSMonitor LRCE', 'fsmonitor-lrce'],
-            ['Bun File Traversal', 'bun-file-traversal']
-        ]);
-        let oldPath = location.pathname;
-        try {
-            oldPath = decodeURIComponent(oldPath);
-        } catch (_) {
-            // Leave malformed URLs on the not-found page.
-        }
-        const match = oldPath.match(/^\/writeups\/([^/]+)\.(md|html)$/);
-        const slug = match && oldPosts.get(match[1]);
-        if (slug) {
-            location.replace(`/blog/${slug}/${location.search}${location.hash}`);
-        } else if (oldPath === '/writeups/' || oldPath === '/writeups/index.html') {
-            location.replace(`/blog/${location.search}${location.hash}`);
-        }
-    </script>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner wrap">
+    <a class="brand" href="/" aria-label="X3r0Day home">X3r0Day<span class="brand-suffix">Research &amp; notes</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <a href="/">Research</a>
+        <a href="/blog/">Writeups</a>
+        <a href="/#tools">Projects</a><a href="/#about">About</a>
+    </nav>
+    <div class="header-actions"><button class="search-trigger" type="button" aria-label="Search research" aria-controls="site-search" hidden><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="menu-toggle" aria-controls="site-nav" aria-expanded="false" hidden>Menu <span aria-hidden="true">+</span></button></div>
+</div></header>
+<main id="main" class="simple-page wrap"><span class="error-mark" aria-hidden="true">404</span><p class="intro-label">A little off the map</p><h1>Nothing here.<br>Plenty to explore.</h1><p>This address doesn't point to a page. The research is still right where it belongs.</p><div class="simple-actions"><a class="button button-ink" href="/blog/">Browse the writing <span aria-hidden="true">↗</span></a><a class="text-link" href="/">Back to home</a></div></main><script src="/assets/redirects.js"></script>
+<footer class="site-footer wrap"><a class="footer-name" href="/">X3r0Day<span> / independent research</span></a><div><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="https://x.com/X3r0DaySec">X / Twitter ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div><span>© 2026</span></footer>
+<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results"><li data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security"><a href="/blog/emacs-dir-locals-code-execution/"><span>Editor security</span><strong>Emacs: code execution on file open</strong><span aria-hidden="true">↗</span></a></li><li data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security"><a href="/blog/hermes-agent-unauth-rce/"><span>Application security</span><strong>Hermes Agent: unauthenticated RCE</strong><span aria-hidden="true">↗</span></a></li><li data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain"><a href="/blog/bun-file-traversal/"><span>Supply chain</span><strong>Bun install: arbitrary file write</strong><span aria-hidden="true">↗</span></a></li><li data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling"><a href="/blog/fsmonitor-lrce/"><span>Developer tooling</span><strong>Git FSMonitor: workspace poisoning</strong><span aria-hidden="true">↗</span></a></li><li data-search="insect v2 an earlier red-team project revisiting 1990s malware, preserved from the original research collection. red-team research"><a href="https://github.com/X3r0Day/FUD-C2-Framework.git"><span>Red-team research</span><strong>Insect V2</strong><span aria-hidden="true">↗</span></a></li><li data-search="workspace trust &amp; python .pth files the research collection covering vs code python initialization and git fsmonitor workspace poisoning. developer tooling"><a href="https://github.com/X3r0Day/X3r0Day-Research"><span>Developer tooling</span><strong>Workspace trust &amp; Python .pth files</strong><span aria-hidden="true">↗</span></a></li><li data-search="a data-exposure disclosure to cert-in a coordinated report concerning exposed personal data on an indian government website. responsible disclosure"><a href="https://x.com/X3r0DaySec/status/2063002547561115826"><span>Responsible disclosure</span><strong>A data-exposure disclosure to CERT-In</strong><span aria-hidden="true">↗</span></a></li></ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>
 </body>
 </html>

