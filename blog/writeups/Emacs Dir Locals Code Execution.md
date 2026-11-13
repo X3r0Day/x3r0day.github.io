@@ -8,6 +8,8 @@ The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I teste
 
 **Patch status:** the fix is available upstream. The [November 11 announcement](https://www.openwall.com/lists/oss-security/2026/11/11/7) described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The [public bug report, #82213](https://debbugs.gnu.org/82213), contains the original report, patch, and release-branch confirmation.
 
+**Severity:** 7.8 (High) — `CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H`.
+
 ## The short version
 
 The attack needed two files in an attacker-controlled project:
