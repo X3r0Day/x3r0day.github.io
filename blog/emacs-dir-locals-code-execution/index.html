@@ -33,10 +33,10 @@
 </div></header>
 <div class="reading-progress" aria-hidden="true"></div>
 <main id="main" class="article-page wrap">
-    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag iris">Editor security</span><span>November 12, 2026</span><span>8 min read</span></div><h1>Emacs: code execution on file open</h1><p class="article-dek">An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Emacs%20Dir%20Locals%20Code%20Execution.md">View Markdown ↗</a></div></header>
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag iris">Editor security</span><span>November 12, 2026</span><span>7 min read</span></div><h1>Emacs: code execution on file open</h1><p class="article-dek">An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Emacs%20Dir%20Locals%20Code%20Execution.md">View Markdown ↗</a></div></header>
     <div class="article-resources"><a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">Upstream advisory ↗</a></div>
     <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#the-short-version">The short version</a><a href="#what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</a><a href="#the-matcher-that-did-more-than-match">The matcher that did more than match</a><a href="#why-the-payload-needs-two-entries">Why the payload needs two entries</a><a href="#poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</a><a href="#poc-2-turning-the-opened-buffer-into-code">PoC 2: turning the opened buffer into code</a><a href="#what-was-tested-and-what-the-impact-was">What was tested, and what the impact was</a><a href="#how-the-regression-happened">How the regression happened</a><a href="#what-the-patch-changes">What the patch changes</a><a href="#fix-and-temporary-workaround">Fix and temporary workaround</a><a href="#disclosure-timeline">Disclosure timeline</a><a href="#references">References</a></nav></details></aside><article class="prose" id="post-content"><p>I found a validation bypass in GNU Emacs that let a project&#39;s <code>.dir-locals.el</code> execute arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No evaluation command, local-variable approval, or trust prompt was needed.</p>
-<p>The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 is unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier&#39;s patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.</p>
+<p>The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 and older are unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier&#39;s patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.</p>
 <p><strong>Patch status:</strong> the fix is available upstream. The <a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">November 11 announcement</a> described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The <a href="https://debbugs.gnu.org/82213">public bug report, #82213</a>, contains the original report, patch, and release-branch confirmation.</p>
 <h2 id="the-short-version">The short version</h2>
 <p>The attack needed two files in an attacker-controlled project:</p>
@@ -47,7 +47,7 @@
 <p>The README did not need to contain executable content. The payload could live entirely in <code>.dir-locals.el</code>, disguised as an entry in the directory-local <code>auto-mode-alist</code>.</p>
 <p>Opening the README caused Emacs to select its major mode. During that selection, an internal matching helper called an attacker-supplied function <strong>before</strong> the caller checked whether the function was allowed.</p>
 <p>The final mode was harmless. The earlier function was not.</p>
-<p>One terminology point: the original research called this a &quot;0-click&quot; issue because execution required no extra confirmation after opening the file. The user still had to open a matching file in the project. More precisely, this was <strong>arbitrary code execution on file open, without a trust prompt</strong>, under the privileges of the Emacs process.</p>
+<p><strong>Opening a matching file was enough to run project-supplied code</strong>, with the same permissions as Emacs.</p>
 <h2 id="what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</h2>
 <p>Emacs projects can use <code>.dir-locals.el</code> to configure editing behavior for files in a directory tree: indentation, formatting, and other project-specific settings.</p>
 <p>There is also a special <code>auto-mode-alist</code> entry that lets a directory choose major modes based on filenames. That matters because choosing a major mode means calling a function. Emacs therefore has a dedicated check for functions supplied through this path:</p>
@@ -114,7 +114,7 @@
 </ol>
 <p>The function that needed checking was not the function the caller eventually checked.</p>
 <h2 id="poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</h2>
-<p>This reproducer uses the original marker command, <code>id &gt; pwned</code>. The command writes the current process identity to a local file; it does not need a network connection.</p>
+<p>This reproducer uses a minimal marker command, <code>id &gt; pwned</code>. The command writes the current process identity to a local file; it does not need a network connection.</p>
 <pre><code class="language-sh">workdir=&quot;$(mktemp -d)&quot;
 cd &quot;$workdir&quot; || exit 1
 
@@ -141,7 +141,7 @@ cat pwned
 <pre><code class="language-sh">emacs -nw -Q README.md
 </code></pre>
 <p>Execution occurred during file opening, before the buffer was displayed, without answering a prompt. <code>-Q</code> did not prevent it: skipping personal initialization files does not disable this directory-local processing path.</p>
-<p>This is the more revealing variant. Reading only the README would not expose the payload, because the executable part was in the project&#39;s editor configuration.</p>
+<p>The payload was invisible in the file being opened. Anyone reviewing the README alone would not see it, because the executable part was in the project&#39;s editor configuration.</p>
 <h2 id="poc-2-turning-the-opened-buffer-into-code">PoC 2: turning the opened buffer into code</h2>
 <p>The function slot did not have to contain a lambda. It could also name <code>eval-buffer</code>:</p>
 <pre><code class="language-elisp">((auto-mode-alist . ((&quot;&quot; . fundamental-mode)
@@ -169,7 +169,7 @@ cat pwned
 <p>The result was the same marker file. Here, selecting a mode caused Emacs to evaluate the opened buffer as Lisp. <code>eval-buffer</code> should have been rejected by the directory-local validation, but the early call never went through it.</p>
 <p>Both variants were included in the <a href="https://debbugs.gnu.org/82213#5">original report</a>.</p>
 <h2 id="what-was-tested-and-what-the-impact-was">What was tested, and what the impact was</h2>
-<p>The pre-fix research tests reproduced both variants on Linux in batch mode and interactive TTY sessions:</p>
+<p>Before the fix, both variants reproduced on Linux in batch and interactive TTY sessions:</p>
 <table>
 <thead>
 <tr>
@@ -247,7 +247,7 @@ cat pwned
 </tr>
 </tbody></table>
 <p>Thanks to Stefan Monnier for the fix and Sean Whitton for the disclosure and release-branch confirmation.</p>
-<p>The lesson here is narrower than &quot;project configuration can be dangerous.&quot; Emacs already had a rule against this exact kind of directory-local function execution. A later change introduced a side effect inside a helper, and the caller&#39;s validation still protected only the returned value. The execution boundary moved; the check did not.</p>
+<p>Emacs already had a rule against this exact kind of directory-local function execution. A later change introduced a side effect inside a helper, and the caller&#39;s validation still protected only the returned value. The execution boundary moved; the check did not.</p>
 <h2 id="references">References</h2>
 <ul>
 <li><a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">oss-security: Emacs .dir-locals.el arbitrary code execution, November 11, 2026</a></li>

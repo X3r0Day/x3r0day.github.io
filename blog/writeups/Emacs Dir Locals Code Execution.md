@@ -4,7 +4,7 @@ By X3r0Day · November 12, 2026
 
 I found a validation bypass in GNU Emacs that let a project's `.dir-locals.el` execute arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No evaluation command, local-variable approval, or trust prompt was needed.
 
-The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 is unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier's patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.
+The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 and older are unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier's patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.
 
 **Patch status:** the fix is available upstream. The [November 11 announcement](https://www.openwall.com/lists/oss-security/2026/11/11/7) described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The [public bug report, #82213](https://debbugs.gnu.org/82213), contains the original report, patch, and release-branch confirmation.
 
@@ -24,7 +24,7 @@ Opening the README caused Emacs to select its major mode. During that selection,
 
 The final mode was harmless. The earlier function was not.
 
-One terminology point: the original research called this a "0-click" issue because execution required no extra confirmation after opening the file. The user still had to open a matching file in the project. More precisely, this was **arbitrary code execution on file open, without a trust prompt**, under the privileges of the Emacs process.
+**Opening a matching file was enough to run project-supplied code**, with the same permissions as Emacs.
 
 ## What directory locals are supposed to do
 
@@ -125,7 +125,7 @@ The function that needed checking was not the function the caller eventually che
 
 ## PoC 1: an ordinary Markdown file
 
-This reproducer uses the original marker command, `id > pwned`. The command writes the current process identity to a local file; it does not need a network connection.
+This reproducer uses a minimal marker command, `id > pwned`. The command writes the current process identity to a local file; it does not need a network connection.
 
 ```sh
 workdir="$(mktemp -d)"
@@ -162,7 +162,7 @@ emacs -nw -Q README.md
 
 Execution occurred during file opening, before the buffer was displayed, without answering a prompt. `-Q` did not prevent it: skipping personal initialization files does not disable this directory-local processing path.
 
-This is the more revealing variant. Reading only the README would not expose the payload, because the executable part was in the project's editor configuration.
+The payload was invisible in the file being opened. Anyone reviewing the README alone would not see it, because the executable part was in the project's editor configuration.
 
 ## PoC 2: turning the opened buffer into code
 
@@ -201,7 +201,7 @@ Both variants were included in the [original report](https://debbugs.gnu.org/822
 
 ## What was tested, and what the impact was
 
-The pre-fix research tests reproduced both variants on Linux in batch mode and interactive TTY sessions:
+Before the fix, both variants reproduced on Linux in batch and interactive TTY sessions:
 
 | Build | Recorded result |
 | --- | --- |
@@ -270,7 +270,7 @@ That blocked both PoCs in the original testing, but also disables legitimate dir
 
 Thanks to Stefan Monnier for the fix and Sean Whitton for the disclosure and release-branch confirmation.
 
-The lesson here is narrower than "project configuration can be dangerous." Emacs already had a rule against this exact kind of directory-local function execution. A later change introduced a side effect inside a helper, and the caller's validation still protected only the returned value. The execution boundary moved; the check did not.
+Emacs already had a rule against this exact kind of directory-local function execution. A later change introduced a side effect inside a helper, and the caller's validation still protected only the returned value. The execution boundary moved; the check did not.
 
 ## References
 
