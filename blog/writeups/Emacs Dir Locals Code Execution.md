@@ -2,7 +2,9 @@
 
 By X3r0Day · November 12, 2026 · CVE-2026-131959
 
-I found a validation bypass in GNU Emacs, tracked as [CVE-2026-131959](https://www.cve.org/CVERecord?id=CVE-2026-131959), that let a project's `.dir-locals.el` run arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No eval command, no local-variable approval, no trust prompt.
+I found a validation bypass in GNU Emacs, tracked as [CVE-2026-131959](https://www.cve.org/CVERecord?id=CVE-2026-131959), that let a project's `.dir-locals.el` run arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README.
+
+I didn't have to type an eval command, and I didn't click through a local-variable prompt. The project got to run code, and the only thing I did was open a file.
 
 Which means the attack is: clone a repo, open the README, and someone else's code is now running with your permissions. In an editor that ships with most Linux distributions. Of all the things I expected to get out of a Markdown file, remote code execution was not near the top of the list.
 
@@ -36,7 +38,7 @@ By then the function has run. Emacs goes on to select a completely harmless mode
 
 Emacs projects use `.dir-locals.el` to set editing behavior for a whole tree. Indentation, formatting, all the small opinions that make a codebase feel like home.
 
-There's also a special `auto-mode-alist` entry that lets a directory pick major modes based on filename, which matters because selecting a mode means calling a function. Functions supplied this way get a dedicated gatekeeper:
+There's also a special `auto-mode-alist` entry that lets a directory pick major modes based on filename. Selecting a mode means calling a function, so functions supplied this way get a dedicated gatekeeper:
 
 ```elisp
 (defun set-auto-mode--dir-local-valid-p (mode)
@@ -108,8 +110,6 @@ Here's the directory-local configuration from the lambda variant:
                                  t))))
 ```
 
-Two details make it work.
-
 First, the remembered function only fires when the matcher finds another match. The empty regexp matches everything, which in Lisp is the polite way of saying "match whatever, I'm not picky". So after `.md` is stripped from `README.md`, it still catches the filename and produces `fundamental-mode` as the final answer.
 
 Second, Emacs collects directory-local entries in reverse. The catch-all goes first in the file so that the `.md` entry is the first one the matcher sees.
@@ -127,7 +127,7 @@ The function that got checked was not the function that ran. One of them was a l
 
 ## PoC 1: an ordinary Markdown file
 
-The marker is deliberately dull: `id > pwned`. No beacon, no DNS exfil, no little victory banner. It writes down who you are and stops, which is all the proof this needs.
+The marker is deliberately dull: `id > pwned`. It writes down who you are and stops. I didn't want the reproducer to depend on a callback server staying awake.
 
 ```sh
 workdir="$(mktemp -d)"
@@ -211,7 +211,7 @@ Before the fix, both variants reproduced on Linux in batch and interactive TTY s
 | Emacs 32.0.50, development build from November 9, 2026 | Both variants reproduced |
 | Emacs 30.2 | Unaffected, as confirmed by upstream |
 
-The 32.0.50 row is the November 9 development snapshot I tested, not every build that reports that version string. GUI file opening goes through the same mode-selection path, though the recorded runs were batch and TTY.
+The 32.0.50 row is the November 9 development snapshot I tested, not every build that reports that version string. GUI file opening goes through the same mode-selection path, but the recorded runs were batch and TTY.
 
 For this to work, someone has to control a project directory containing `.dir-locals.el` and get you to open a matching file inside it. Directory-local settings apply to subdirectories too, so dropping the config at a repository root covers everything beneath it. A README at the top of the tree is enough.
 
@@ -231,7 +231,7 @@ The 2021 tests covered an arbitrary symbol, a lambda, and `dired-mode`. All thre
 
 Everyone did their job. The bug shipped anyway.
 
-Nobody weakened the predicate. A new call appeared on a path that never reached it.
+Nobody weakened the predicate, but a new call appeared on a path that never reached it.
 
 ## What the patch changes
 
@@ -247,7 +247,7 @@ Stefan Monnier's [published patch](https://www.openwall.com/lists/oss-security/2
   mode-t)
 ```
 
-The ordering is the fix. In the directory-local path, the validity check now stands in front of the call that actually executes a function, intermediate multi-mode functions included. A harmless final mode can't carry an earlier call past the gate anymore.
+The ordering is the fix. In the directory-local path, the validity check now stands in front of the call that executes a function, intermediate multi-mode functions included. A harmless final mode can't carry an earlier call past the gate anymore.
 
 ## Fix and temporary workaround
 
@@ -259,7 +259,7 @@ If you're stuck on a vulnerable build, the workaround from my report was:
 (setq enable-dir-local-variables nil)
 ```
 
-It blocked both PoCs when I tested it. It also switches off legitimate per-project settings, so treat it as a seatbelt rather than a repair.
+It blocked both PoCs when I tested it. It also switches off legitimate per-project settings, so it buys you time and nothing else.
 
 ## Disclosure timeline
 
@@ -272,7 +272,7 @@ It blocked both PoCs when I tested it. It also switches off legitimate per-proje
 
 Thanks to Stefan Monnier for the fix and to Sean Whitton for the disclosure and the release-branch confirmation.
 
-The interesting part isn't "project config can be dangerous." Emacs already had a rule against exactly this kind of directory-local function execution, and the rule still worked. A later change put a side effect inside a helper, the caller kept validating only the returned value, and the execution moved out from under the check. Validation belongs where the action happens, not where the value comes back.
+Emacs already had a rule against this kind of directory-local function execution, and the rule still worked. A later change put a side effect inside a helper, the caller kept validating only the returned value, and the execution moved out from under the check. That's why the patch does the boring thing and validates where the call happens. Boring is what you want here.
 
 ## References
 

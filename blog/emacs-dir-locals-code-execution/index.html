@@ -52,9 +52,10 @@
 </div></header>
 <div class="reading-progress" aria-hidden="true"></div>
 <main id="main" class="article-page wrap">
-    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag iris">Editor security</span><span>November 12, 2026</span><span>8 min read</span></div><h1>Emacs: code execution on file open <a class="cve-tag" href="https://www.cve.org/CVERecord?id=CVE-2026-131959" rel="noopener">CVE-2026-131959</a></h1><p class="article-dek">An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Emacs%20Dir%20Locals%20Code%20Execution.md">View Markdown ↗</a></div></header>
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag iris">Editor security</span><span>November 12, 2026</span><span>9 min read</span></div><h1>Emacs: code execution on file open <a class="cve-tag" href="https://www.cve.org/CVERecord?id=CVE-2026-131959" rel="noopener">CVE-2026-131959</a></h1><p class="article-dek">An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/Emacs%20Dir%20Locals%20Code%20Execution.md">View Markdown ↗</a></div></header>
     <div class="article-resources"><a href="https://www.cve.org/CVERecord?id=CVE-2026-131959">CVE-2026-131959 record ↗</a><a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">Upstream advisory ↗</a></div>
-    <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#the-short-version">The short version</a><a href="#what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</a><a href="#the-matcher-that-did-more-than-match">The matcher that did more than match</a><a href="#why-the-payload-needs-two-entries">Why the payload needs two entries</a><a href="#poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</a><a href="#poc-2-turning-the-opened-buffer-into-code">PoC 2: turning the opened buffer into code</a><a href="#what-was-tested-and-what-the-impact-was">What was tested, and what the impact was</a><a href="#how-the-regression-happened">How the regression happened</a><a href="#what-the-patch-changes">What the patch changes</a><a href="#fix-and-temporary-workaround">Fix and temporary workaround</a><a href="#disclosure-timeline">Disclosure timeline</a><a href="#references">References</a></nav></details></aside><article class="prose" id="post-content"><p>I found a validation bypass in GNU Emacs, tracked as <a href="https://www.cve.org/CVERecord?id=CVE-2026-131959">CVE-2026-131959</a>, that let a project&#39;s <code>.dir-locals.el</code> run arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No eval command, no local-variable approval, no trust prompt.</p>
+    <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents"><a href="#the-short-version">The short version</a><a href="#what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</a><a href="#the-matcher-that-did-more-than-match">The matcher that did more than match</a><a href="#why-the-payload-needs-two-entries">Why the payload needs two entries</a><a href="#poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</a><a href="#poc-2-turning-the-opened-buffer-into-code">PoC 2: turning the opened buffer into code</a><a href="#what-was-tested-and-what-the-impact-was">What was tested, and what the impact was</a><a href="#how-the-regression-happened">How the regression happened</a><a href="#what-the-patch-changes">What the patch changes</a><a href="#fix-and-temporary-workaround">Fix and temporary workaround</a><a href="#disclosure-timeline">Disclosure timeline</a><a href="#references">References</a></nav></details></aside><article class="prose" id="post-content"><p>I found a validation bypass in GNU Emacs, tracked as <a href="https://www.cve.org/CVERecord?id=CVE-2026-131959">CVE-2026-131959</a>, that let a project&#39;s <code>.dir-locals.el</code> run arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README.</p>
+<p>I didn&#39;t have to type an eval command, and I didn&#39;t click through a local-variable prompt. The project got to run code, and the only thing I did was open a file.</p>
 <p>Which means the attack is: clone a repo, open the README, and someone else&#39;s code is now running with your permissions. In an editor that ships with most Linux distributions. Of all the things I expected to get out of a Markdown file, remote code execution was not near the top of the list.</p>
 <p>The issue affected Emacs 31.1 and the pre-fix 32.0.50 builds I tested. Emacs 30.2 and older are unaffected. Upstream disclosed on November 11, credited the discovery to X3r0Day, and published Stefan Monnier&#39;s patch. Sean Whitton confirmed the fix was on the release branch, and the tracker marks the bug fixed in 31.2.</p>
 <p><strong>Patch status:</strong> the fix is available upstream. The <a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">November 11 announcement</a> described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The <a href="https://debbugs.gnu.org/82213">public bug report, #82213</a>, contains the original report, patch, and release-branch confirmation.</p>
@@ -72,7 +73,7 @@
 <p><strong>Opening a matching file was enough to run project-supplied code</strong>, with the same permissions as Emacs.</p>
 <h2 id="what-directory-locals-are-supposed-to-do">What directory locals are supposed to do</h2>
 <p>Emacs projects use <code>.dir-locals.el</code> to set editing behavior for a whole tree. Indentation, formatting, all the small opinions that make a codebase feel like home.</p>
-<p>There&#39;s also a special <code>auto-mode-alist</code> entry that lets a directory pick major modes based on filename, which matters because selecting a mode means calling a function. Functions supplied this way get a dedicated gatekeeper:</p>
+<p>There&#39;s also a special <code>auto-mode-alist</code> entry that lets a directory pick major modes based on filename. Selecting a mode means calling a function, so functions supplied this way get a dedicated gatekeeper:</p>
 <pre><code class="language-elisp">(defun set-auto-mode--dir-local-valid-p (mode)
   &quot;Say whether MODE can be used in a .dir-local.el `auto-mode-alist&#39;.&quot;
   (and (symbolp mode)
@@ -120,7 +121,6 @@
                                    (shell-command &quot;id &gt; pwned&quot;))
                                  t))))
 </code></pre>
-<p>Two details make it work.</p>
 <p>First, the remembered function only fires when the matcher finds another match. The empty regexp matches everything, which in Lisp is the polite way of saying &quot;match whatever, I&#39;m not picky&quot;. So after <code>.md</code> is stripped from <code>README.md</code>, it still catches the filename and produces <code>fundamental-mode</code> as the final answer.</p>
 <p>Second, Emacs collects directory-local entries in reverse. The catch-all goes first in the file so that the <code>.md</code> entry is the first one the matcher sees.</p>
 <p>For <code>README.md</code>, the sequence is:</p>
@@ -134,7 +134,7 @@
 </ol>
 <p>The function that got checked was not the function that ran. One of them was a legitimate major mode. The other had already opened a shell.</p>
 <h2 id="poc-1-an-ordinary-markdown-file">PoC 1: an ordinary Markdown file</h2>
-<p>The marker is deliberately dull: <code>id &gt; pwned</code>. No beacon, no DNS exfil, no little victory banner. It writes down who you are and stops, which is all the proof this needs.</p>
+<p>The marker is deliberately dull: <code>id &gt; pwned</code>. It writes down who you are and stops. I didn&#39;t want the reproducer to depend on a callback server staying awake.</p>
 <pre><code class="language-sh">workdir=&quot;$(mktemp -d)&quot;
 cd &quot;$workdir&quot; || exit 1
 
@@ -210,7 +210,7 @@ cat pwned
 <td>Unaffected, as confirmed by upstream</td>
 </tr>
 </tbody></table>
-<p>The 32.0.50 row is the November 9 development snapshot I tested, not every build that reports that version string. GUI file opening goes through the same mode-selection path, though the recorded runs were batch and TTY.</p>
+<p>The 32.0.50 row is the November 9 development snapshot I tested, not every build that reports that version string. GUI file opening goes through the same mode-selection path, but the recorded runs were batch and TTY.</p>
 <p>For this to work, someone has to control a project directory containing <code>.dir-locals.el</code> and get you to open a matching file inside it. Directory-local settings apply to subdirectories too, so dropping the config at a repository root covers everything beneath it. A README at the top of the tree is enough.</p>
 <p>Unlike the <a href="/blog/fsmonitor-lrce/">Git FSMonitor workspace-poisoning issue</a>, this didn&#39;t require shipping a preconfigured <code>.git</code> directory. A tracked <code>.dir-locals.el</code> arrives with an ordinary clone. Cloning alone doesn&#39;t set it off, which is the thin slice of good news here: you still have to open a file. For a README, opening it is the entire point of a README.</p>
 <p>The marker demonstrated shell execution at your privilege level. It isn&#39;t privilege escalation by itself, and in the lambda variant the README didn&#39;t need a single line of code.</p>
@@ -223,7 +223,7 @@ cat pwned
 </ul>
 <p>The 2021 tests covered an arbitrary symbol, a lambda, and <code>dired-mode</code>. All three were rejected, correctly. The <code>(REGEXP FUNCTION t)</code> shape wasn&#39;t among them, because in 2021 it couldn&#39;t execute anything. The 2025 change made it execute.</p>
 <p>Everyone did their job. The bug shipped anyway.</p>
-<p>Nobody weakened the predicate. A new call appeared on a path that never reached it.</p>
+<p>Nobody weakened the predicate, but a new call appeared on a path that never reached it.</p>
 <h2 id="what-the-patch-changes">What the patch changes</h2>
 <p>Stefan Monnier&#39;s <a href="https://www.openwall.com/lists/oss-security/2026/11/11/7">published patch</a> replaces <code>set-auto-mode--find-matching-alist-entry</code> with <code>set-auto-mode--from-matching-alist-entry</code> and passes the directory-local context down into it, so the check travels with the call instead of waiting at the exit.</p>
 <pre><code class="language-elisp">(when newmode
@@ -234,13 +234,13 @@ cat pwned
     (setq was-set t))
   mode-t)
 </code></pre>
-<p>The ordering is the fix. In the directory-local path, the validity check now stands in front of the call that actually executes a function, intermediate multi-mode functions included. A harmless final mode can&#39;t carry an earlier call past the gate anymore.</p>
+<p>The ordering is the fix. In the directory-local path, the validity check now stands in front of the call that executes a function, intermediate multi-mode functions included. A harmless final mode can&#39;t carry an earlier call past the gate anymore.</p>
 <h2 id="fix-and-temporary-workaround">Fix and temporary workaround</h2>
 <p>Install a build with the fix. The tracker names 31.2 as the fixed version and the announcement says the patch is intended for that release. On a distribution, check whether the fix was backported instead of trusting a version string.</p>
 <p>If you&#39;re stuck on a vulnerable build, the workaround from my report was:</p>
 <pre><code class="language-elisp">(setq enable-dir-local-variables nil)
 </code></pre>
-<p>It blocked both PoCs when I tested it. It also switches off legitimate per-project settings, so treat it as a seatbelt rather than a repair.</p>
+<p>It blocked both PoCs when I tested it. It also switches off legitimate per-project settings, so it buys you time and nothing else.</p>
 <h2 id="disclosure-timeline">Disclosure timeline</h2>
 <table>
 <thead>
@@ -267,7 +267,7 @@ cat pwned
 </tr>
 </tbody></table>
 <p>Thanks to Stefan Monnier for the fix and to Sean Whitton for the disclosure and the release-branch confirmation.</p>
-<p>The interesting part isn&#39;t &quot;project config can be dangerous.&quot; Emacs already had a rule against exactly this kind of directory-local function execution, and the rule still worked. A later change put a side effect inside a helper, the caller kept validating only the returned value, and the execution moved out from under the check. Validation belongs where the action happens, not where the value comes back.</p>
+<p>Emacs already had a rule against this kind of directory-local function execution, and the rule still worked. A later change put a side effect inside a helper, the caller kept validating only the returned value, and the execution moved out from under the check. That&#39;s why the patch does the boring thing and validates where the call happens. Boring is what you want here.</p>
 <h2 id="references">References</h2>
 <ul>
 <li><a href="https://www.cve.org/CVERecord?id=CVE-2026-131959">CVE-2026-131959: Emacs .dir-locals.el code execution</a></li>
