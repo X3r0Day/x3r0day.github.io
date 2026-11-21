@@ -2,9 +2,11 @@
 
 By X3r0Day · November 12, 2026 · CVE-2026-131959
 
-I found a validation bypass in GNU Emacs, tracked as [CVE-2026-131959](https://www.cve.org/CVERecord?id=CVE-2026-131959), that let a project's `.dir-locals.el` execute arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No evaluation command, local-variable approval, or trust prompt was needed.
+I found a validation bypass in GNU Emacs, tracked as [CVE-2026-131959](https://www.cve.org/CVERecord?id=CVE-2026-131959), that let a project's `.dir-locals.el` run arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No eval command, no local-variable approval, no trust prompt.
 
-The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 and older are unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier's patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.
+Which means the attack is: clone a repo, open the README, and someone else's code is now running with your permissions. In an editor that ships with most Linux distributions. Of all the things I expected to get out of a Markdown file, remote code execution was not near the top of the list.
+
+The issue affected Emacs 31.1 and the pre-fix 32.0.50 builds I tested. Emacs 30.2 and older are unaffected. Upstream disclosed on November 11, credited the discovery to X3r0Day, and published Stefan Monnier's patch. Sean Whitton confirmed the fix was on the release branch, and the tracker marks the bug fixed in 31.2.
 
 **Patch status:** the fix is available upstream. The [November 11 announcement](https://www.openwall.com/lists/oss-security/2026/11/11/7) described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The [public bug report, #82213](https://debbugs.gnu.org/82213), contains the original report, patch, and release-branch confirmation.
 
@@ -20,19 +22,21 @@ project/
 └── README.md
 ```
 
-The README did not need to contain executable content. The payload could live entirely in `.dir-locals.el`, disguised as an entry in the directory-local `auto-mode-alist`.
+The README didn't have to contain anything executable. The payload lived in `.dir-locals.el`, dressed up as an entry in the directory-local `auto-mode-alist`. It's a plain text file sitting in the repo, so it goes through review like every other config file. Which is to say nobody reads it.
 
-Opening the README caused Emacs to select its major mode. During that selection, an internal matching helper called an attacker-supplied function **before** the caller checked whether the function was allowed.
+That's the whole setup. Two files, one of which is a README.
 
-The final mode was harmless. The earlier function was not.
+Open the README and Emacs starts picking a major mode. Somewhere in that selection, an internal matching helper calls an attacker-supplied function. The check on whether the function was allowed happens later, in the caller, on a value the helper has already returned.
+
+By then the function has run. Emacs goes on to select a completely harmless mode and everything looks normal.
 
 **Opening a matching file was enough to run project-supplied code**, with the same permissions as Emacs.
 
 ## What directory locals are supposed to do
 
-Emacs projects can use `.dir-locals.el` to configure editing behavior for files in a directory tree: indentation, formatting, and other project-specific settings.
+Emacs projects use `.dir-locals.el` to set editing behavior for a whole tree. Indentation, formatting, all the small opinions that make a codebase feel like home.
 
-There is also a special `auto-mode-alist` entry that lets a directory choose major modes based on filenames. That matters because choosing a major mode means calling a function. Emacs therefore has a dedicated check for functions supplied through this path:
+There's also a special `auto-mode-alist` entry that lets a directory pick major modes based on filename, which matters because selecting a mode means calling a function. Functions supplied this way get a dedicated gatekeeper:
 
 ```elisp
 (defun set-auto-mode--dir-local-valid-p (mode)
@@ -43,15 +47,13 @@ There is also a special `auto-mode-alist` entry that lets a directory choose maj
        (not (provided-mode-derived-p mode 'special-mode))))
 ```
 
-An arbitrary lambda does not pass that check. Neither does `eval-buffer`.
+An arbitrary lambda fails that check. `eval-buffer` fails it too. The gate exists because both of those are terrible ideas.
 
-This was not a normal directory-local `eval` setting. `set-auto-mode` extracted the special `auto-mode-alist` key through `hack-dir-local--get-variables`, outside the ordinary risky-variable approval flow. That path relied on the mode-function check. Bypassing it did not produce a second approval prompt later.
-
-The check was not missing. It was in the wrong place for one execution path.
+This also wasn't a normal directory-local `eval` setting. `set-auto-mode` pulls the special `auto-mode-alist` key through `hack-dir-local--get-variables`, outside the ordinary risky-variable approval flow. Once that check was bypassed, no second prompt was coming to save anyone.
 
 ## The matcher that did more than match
 
-The relevant file-opening path was:
+Here's the path a file takes when you open it:
 
 ```text
 find-file
@@ -62,7 +64,7 @@ find-file
         set-auto-mode--find-matching-alist-entry
 ```
 
-The caller asked the helper to find a mode, then validated the result:
+The caller asks the helper for a mode, then validates whatever comes back:
 
 ```elisp
 (setq mode (set-auto-mode--find-matching-alist-entry
@@ -76,15 +78,15 @@ The caller asked the helper to find a mode, then validated the result:
   t)
 ```
 
-That looks reasonable if the helper only returns a value. But `auto-mode-alist` supports more than the usual `(REGEXP . MODE)` entry. It also accepts:
+All very sensible, provided the helper only ever returns a value. But `auto-mode-alist` accepts more than the familiar `(REGEXP . MODE)` pair. It also accepts:
 
 ```elisp
 (REGEXP FUNCTION NON-NIL)
 ```
 
-This form calls a function, removes the matching suffix from the filename, and continues searching for another match.
+That third form runs a function, chops the matched suffix off the filename, and keeps searching for another match. It's documented, it's useful, and it's been in Emacs long enough that nobody looks at it twice.
 
-In the vulnerable implementation, the helper remembered the first function and ran it when it found the next matching entry:
+In the vulnerable implementation, the helper remembered the first function and ran it as soon as it found the next entry:
 
 ```elisp
 (when newmode
@@ -93,13 +95,11 @@ In the vulnerable implementation, the helper remembered the first function and r
   (setq mode newmode))
 ```
 
-That `set-auto-mode-0` call happened inside the helper. It did not perform the directory-local validity check first.
-
-By the time execution returned to the caller, the untrusted function had already run. Validating the final return value could not undo it.
+That `set-auto-mode-0` sits inside the helper, before any directory-local validation has run. Control comes back to the caller with the untrusted function already executed, and checking the return value at that point is bookkeeping, not security.
 
 ## Why the payload needs two entries
 
-Here is the directory-local configuration from the lambda variant:
+Here's the directory-local configuration from the lambda variant:
 
 ```elisp
 ((auto-mode-alist . (("" . fundamental-mode)
@@ -108,26 +108,26 @@ Here is the directory-local configuration from the lambda variant:
                                  t))))
 ```
 
-There are two details that make this work.
+Two details make it work.
 
-First, the matcher needs another match before it executes the function it remembered from the multi-mode entry. The empty regular expression is a catch-all. After the `.md` suffix is removed, it still matches and supplies `fundamental-mode` as the final result.
+First, the remembered function only fires when the matcher finds another match. The empty regexp matches everything, which in Lisp is the polite way of saying "match whatever, I'm not picky". So after `.md` is stripped from `README.md`, it still catches the filename and produces `fundamental-mode` as the final answer.
 
-Second, directory-local collection reverses these entries before matching. The catch-all is written first in `.dir-locals.el` so that the malicious `.md` entry is considered first by the matcher.
+Second, Emacs collects directory-local entries in reverse. The catch-all goes first in the file so that the `.md` entry is the first one the matcher sees.
 
 For `README.md`, the sequence is:
 
-1. Match the `.md` entry and remember its lambda.
-2. Remove the matching `.md` suffix from the filename being examined.
-3. Find the catch-all entry.
-4. Execute the remembered lambda inside the helper, without validating it.
-5. Return `fundamental-mode` to the caller.
-6. Validate `fundamental-mode`, which passes.
+1. The `.md` entry matches, and its lambda goes into the remembered slot.
+2. The `.md` suffix is removed from the name being examined.
+3. The catch-all matches what's left.
+4. The remembered lambda runs, inside the helper, unvalidated.
+5. `fundamental-mode` comes back to the caller.
+6. The caller validates `fundamental-mode`. It passes, because it is a real mode and has done nothing wrong.
 
-The function that needed checking was not the function the caller eventually checked.
+The function that got checked was not the function that ran. One of them was a legitimate major mode. The other had already opened a shell.
 
 ## PoC 1: an ordinary Markdown file
 
-This reproducer uses a minimal marker command, `id > pwned`. The command writes the current process identity to a local file; it does not need a network connection.
+The marker is deliberately dull: `id > pwned`. No beacon, no DNS exfil, no little victory banner. It writes down who you are and stops, which is all the proof this needs.
 
 ```sh
 workdir="$(mktemp -d)"
@@ -150,32 +150,32 @@ emacs -Q --batch --eval '(find-file "README.md")'
 cat pwned
 ```
 
-On the vulnerable builds, opening the README created `pwned` in the project directory with output such as:
+On the vulnerable builds, opening the README left `pwned` in the project directory with output like this:
 
 ```text
 uid=1000(user) gid=1000(user) groups=1000(user),...
 ```
 
-The interactive equivalent was:
+The interactive version is the same trick without the batch flag:
 
 ```sh
 emacs -nw -Q README.md
 ```
 
-Execution occurred during file opening, before the buffer was displayed, without answering a prompt. `-Q` did not prevent it: skipping personal initialization files does not disable this directory-local processing path.
+Execution happens while the file is being opened, before the buffer is drawn, and nothing asks for confirmation. `-Q` doesn't help. It tells Emacs to ignore your config. The project brought its own.
 
-The payload was invisible in the file being opened. Anyone reviewing the README alone would not see it, because the executable part was in the project's editor configuration.
+That's the uncomfortable part. You can read every line of that README and find nothing, because the payload wasn't in the file. It was in the project's editor configuration, shipped alongside it in the same clone.
 
 ## PoC 2: turning the opened buffer into code
 
-The function slot did not have to contain a lambda. It could also name `eval-buffer`:
+The function slot didn't need a lambda. It could just name `eval-buffer`:
 
 ```elisp
 ((auto-mode-alist . (("" . fundamental-mode)
                      ("\\.md\\'" eval-buffer t))))
 ```
 
-In this variant, the README contained Lisp rather than an ordinary Markdown document:
+In this variant, the README is the payload:
 
 ```sh
 workdir="$(mktemp -d)"
@@ -197,9 +197,9 @@ emacs -Q --batch --eval '(find-file "README.md")'
 cat pwned
 ```
 
-The result was the same marker file. Here, selecting a mode caused Emacs to evaluate the opened buffer as Lisp. `eval-buffer` should have been rejected by the directory-local validation, but the early call never went through it.
+Same marker file, different route. Selecting a mode made Emacs evaluate the open buffer as Lisp. `eval-buffer` is the sort of function that check exists to reject, and the early call never went anywhere near it.
 
-Both variants were included in the [original report](https://debbugs.gnu.org/82213#5).
+Both variants are in the [original report](https://debbugs.gnu.org/82213#5). One reproducer is a claim; two is a pattern.
 
 ## What was tested, and what the impact was
 
@@ -211,31 +211,31 @@ Before the fix, both variants reproduced on Linux in batch and interactive TTY s
 | Emacs 32.0.50, development build from November 9, 2026 | Both variants reproduced |
 | Emacs 30.2 | Unaffected, as confirmed by upstream |
 
-The 32.0.50 result refers to the development snapshot tested before the fix, not every build carrying that development version string. GUI file opening uses the same mode-selection path, but the recorded runtime tests were batch and TTY.
+The 32.0.50 row is the November 9 development snapshot I tested, not every build that reports that version string. GUI file opening goes through the same mode-selection path, though the recorded runs were batch and TTY.
 
-The attacker needed control of a project directory containing `.dir-locals.el`, and the user needed to open a matching file beneath it. Since directory-local settings can apply to descendant directories, putting the configuration at a repository root could affect matching files further down the tree.
+For this to work, someone has to control a project directory containing `.dir-locals.el` and get you to open a matching file inside it. Directory-local settings apply to subdirectories too, so dropping the config at a repository root covers everything beneath it. A README at the top of the tree is enough.
 
-Unlike the [Git FSMonitor workspace-poisoning issue](/blog/fsmonitor-lrce/), this did not require shipping a preconfigured `.git` directory. A tracked `.dir-locals.el` can arrive through an ordinary clone. Cloning alone was not the trigger; opening a matching file afterward was.
+Unlike the [Git FSMonitor workspace-poisoning issue](/blog/fsmonitor-lrce/), this didn't require shipping a preconfigured `.git` directory. A tracked `.dir-locals.el` arrives with an ordinary clone. Cloning alone doesn't set it off, which is the thin slice of good news here: you still have to open a file. For a README, opening it is the entire point of a README.
 
-The marker command demonstrated shell execution with the user's privileges. This was not a privilege-escalation primitive by itself, and it did not require the README to contain code in the lambda variant.
+The marker demonstrated shell execution at your privilege level. It isn't privilege escalation by itself, and in the lambda variant the README didn't need a single line of code.
 
 ## How the regression happened
 
-The [original report](https://debbugs.gnu.org/82213#5) traces the behavior through three changes:
+The [original report](https://debbugs.gnu.org/82213#5) follows the behavior through three commits:
 
 - `ad5faa424a`, July 23, 2021: added directory-local `auto-mode-alist` support.
 - `9ac6ff53b1`, July 24, 2021: tightened validation to reject arbitrary functions through that feature.
 - `504bdce731`, February 16, 2025: fixed multi-mode matching behavior for bug #75961 by making the remembered function actually run.
 
-The 2021 validation tests covered ordinary entries containing an arbitrary symbol, a lambda, and `dired-mode`. The later multi-mode behavior introduced a call inside the matcher, outside that validation boundary.
+The 2021 tests covered an arbitrary symbol, a lambda, and `dired-mode`. All three were rejected, correctly. The `(REGEXP FUNCTION t)` shape wasn't among them, because in 2021 it couldn't execute anything. The 2025 change made it execute.
 
-The gap was not that an invalid function passed the predicate. It was that this execution path never asked the predicate about that function.
+Everyone did their job. The bug shipped anyway.
+
+Nobody weakened the predicate. A new call appeared on a path that never reached it.
 
 ## What the patch changes
 
-Stefan Monnier's [published patch](https://www.openwall.com/lists/oss-security/2026/11/11/7) replaces `set-auto-mode--find-matching-alist-entry` with `set-auto-mode--from-matching-alist-entry` and passes the directory-local context into it.
-
-Instead of checking only the final result in the caller, the matcher validates each selected function before executing it:
+Stefan Monnier's [published patch](https://www.openwall.com/lists/oss-security/2026/11/11/7) replaces `set-auto-mode--find-matching-alist-entry` with `set-auto-mode--from-matching-alist-entry` and passes the directory-local context down into it, so the check travels with the call instead of waiting at the exit.
 
 ```elisp
 (when newmode
@@ -247,19 +247,19 @@ Instead of checking only the final result in the caller, the matcher validates e
   mode-t)
 ```
 
-The important change is the ordering. In the directory-local path, the validity check now guards the call that actually executes the selected function, including intermediate functions in multi-mode entries. A harmless final mode no longer hides an earlier unvalidated call.
+The ordering is the fix. In the directory-local path, the validity check now stands in front of the call that actually executes a function, intermediate multi-mode functions included. A harmless final mode can't carry an earlier call past the gate anymore.
 
 ## Fix and temporary workaround
 
-Use an Emacs package or source build containing the upstream fix. The tracker identifies 31.2 as the fixed version, and the announcement says the patch is intended for that release. For distribution packages, check whether the fix has been backported rather than relying only on the upstream version number.
+Install a build with the fix. The tracker names 31.2 as the fixed version and the announcement says the patch is intended for that release. On a distribution, check whether the fix was backported instead of trusting a version string.
 
-The workaround recorded in my report was to disable directory-local variables before opening an untrusted project:
+If you're stuck on a vulnerable build, the workaround from my report was:
 
 ```elisp
 (setq enable-dir-local-variables nil)
 ```
 
-That blocked both PoCs in the original testing, but also disables legitimate directory-local settings. It is a workaround, not a replacement for installing the fix.
+It blocked both PoCs when I tested it. It also switches off legitimate per-project settings, so treat it as a seatbelt rather than a repair.
 
 ## Disclosure timeline
 
@@ -270,9 +270,9 @@ That blocked both PoCs in the original testing, but also disables legitimate dir
 | November 11, 2026 | Sean confirmed the release-branch fix; the tracker marked the issue fixed in 31.2. |
 | November 12, 2026 | This writeup published. |
 
-Thanks to Stefan Monnier for the fix and Sean Whitton for the disclosure and release-branch confirmation.
+Thanks to Stefan Monnier for the fix and to Sean Whitton for the disclosure and the release-branch confirmation.
 
-Emacs already had a rule against this exact kind of directory-local function execution. A later change introduced a side effect inside a helper, and the caller's validation still protected only the returned value. The execution boundary moved; the check did not.
+The interesting part isn't "project config can be dangerous." Emacs already had a rule against exactly this kind of directory-local function execution, and the rule still worked. A later change put a side effect inside a helper, the caller kept validating only the returned value, and the execution moved out from under the check. Validation belongs where the action happens, not where the value comes back.
 
 ## References
 
