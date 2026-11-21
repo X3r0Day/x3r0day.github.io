@@ -221,17 +221,13 @@ The marker demonstrated shell execution at your privilege level. It isn't privil
 
 ## How the regression happened
 
-The [original report](https://debbugs.gnu.org/82213#5) follows the behavior through three commits:
+The [original report](https://debbugs.gnu.org/82213#5) walks through three commits.
 
-- `ad5faa424a`, July 23, 2021: added directory-local `auto-mode-alist` support.
-- `9ac6ff53b1`, July 24, 2021: tightened validation to reject arbitrary functions through that feature.
-- `504bdce731`, February 16, 2025: fixed multi-mode matching behavior for bug #75961 by making the remembered function actually run.
+`ad5faa424a` added directory-local `auto-mode-alist` support on July 23, 2021. The next day, `9ac6ff53b1` tightened the validation and added tests that reject a bare symbol, a lambda, and `dired-mode`.
 
-The 2021 tests covered an arbitrary symbol, a lambda, and `dired-mode`. All three were rejected, correctly. The `(REGEXP FUNCTION t)` shape wasn't among them, because in 2021 it couldn't execute anything. The 2025 change made it execute.
+Then it sat for three and a half years, until `504bdce731` landed on February 16, 2025 for bug #75961. Multi-mode entries were being remembered and never run, so the fix added the call inside the matcher. Only the matcher knows whether another entry follows, which is why it belongs there.
 
-Everyone did their job. The bug shipped anyway.
-
-Nobody weakened the predicate, but a new call appeared on a path that never reached it.
+That's the change that put execution on the wrong side of the guard. In 2021, a `(REGEXP FUNCTION t)` entry couldn't run anything, so the tests never asked about one. By 2025 it could.
 
 ## What the patch changes
 
