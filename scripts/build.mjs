@@ -36,11 +36,19 @@ function footer() {
 }
 
 function searchDialog() {
-    const records = [...posts.map(post => ({ title: post.title, description: post.description, label: post.topic, url: `/blog/${post.slug}/` })), ...archive];
-    return `<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results">${records.map(record => `<li data-search="${escape(`${record.title} ${record.description} ${record.label}`.toLowerCase())}"><a href="${escape(record.url)}"><span>${escape(record.label)}</span><strong>${escape(record.title)}</strong><span aria-hidden="true">↗</span></a></li>`).join('')}</ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>`;
+    const records = [...posts.map(post => ({ title: post.title, description: post.description, label: post.topic, url: `/blog/${post.slug}/`, cve: post.cve?.id })), ...archive];
+    return `<dialog id="site-search" class="search-dialog" aria-labelledby="search-title"><div class="search-dialog-heading"><h2 id="search-title">Search the index.</h2><button type="button" class="search-close" aria-label="Close search">×</button></div><label class="sr-only" for="site-query">Search research and projects</label><input id="site-query" type="search" placeholder="A finding, a tool, a question…" autocomplete="off" autofocus><p class="search-status" role="status"></p><ul class="search-results">${records.map(record => `<li data-search="${escape(`${record.title} ${record.description} ${record.label} ${record.cve || ''}`.toLowerCase())}"><a href="${escape(record.url)}"><span>${escape(record.label)}</span><strong>${escape(record.title)}</strong><span aria-hidden="true">↗</span></a></li>`).join('')}</ul><p class="search-empty" hidden>No matches. Try a different word.</p><div class="search-dialog-foot"><span>Research, not a search engine.</span><span>Esc to close</span></div></dialog>`;
 }
 
-function layout({ title, description, path, body, active = '', extraHead = '', extraScripts = '', bodyClass = '' }) {
+function layout({ title, description, path, body, active = '', extraHead = '', extraScripts = '', bodyClass = '', robots = 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1', jsonLd = null, published = null, updated = null, section = null, keywords = [] }) {
+    const articleMeta = active === 'article' && published ? [
+        `    <meta property="article:published_time" content="${published}">`,
+        `    <meta property="article:modified_time" content="${updated || published}">`,
+        `    <meta property="article:author" content="${origin}/">`,
+        section ? `    <meta property="article:section" content="${escape(section)}">` : '',
+        ...keywords.map(keyword => `    <meta property="article:tag" content="${escape(keyword)}">`),
+        ''
+    ].filter(Boolean).join('\n') : '';
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,16 +58,25 @@ function layout({ title, description, path, body, active = '', extraHead = '', e
     <title>${escape(title)} | X3r0Day</title>
     <meta name="description" content="${escape(description)}">
     <meta name="author" content="X3r0Day">
+    <meta name="robots" content="${escape(robots)}">
+    <meta name="googlebot" content="${escape(robots)}">
+    <meta property="og:site_name" content="X3r0Day">
+    <meta property="og:locale" content="en_US">
     <meta property="og:title" content="${escape(title)}">
     <meta property="og:description" content="${escape(description)}">
     <meta property="og:type" content="${active === 'article' ? 'article' : 'website'}">
     <meta property="og:url" content="${origin}${path}">
-    <link rel="canonical" href="${origin}${path}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@X3r0DaySec">
+    <meta name="twitter:title" content="${escape(title)}">
+    <meta name="twitter:description" content="${escape(description)}">
+${articleMeta}    <link rel="canonical" href="${origin}${path}">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
     <link rel="preload" href="/assets/fonts/fragment-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/assets/fonts/silkscreen-400-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="${sharedStylesheet}">
     ${extraHead}
+    ${jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : ''}
     <script defer src="${sharedScript}"></script>
     ${extraScripts}
 </head>
@@ -104,17 +121,54 @@ for (const post of posts) {
     };
     const content = marked.parse(markdown.replace(/^By X3r0Day[^\n]*\n/m, ''), { renderer });
     const toc = headings.map(heading => `<a href="#${heading.id}">${escape(heading.text)}</a>`).join('');
-    const resources = post.resources.map(link => `<a href="${escape(link.url)}">${escape(link.label)} ↗</a>`).join('');
+    const resourceLinks = post.cve ? [{ label: `${post.cve.id} record`, url: post.cve.url }, ...post.resources] : post.resources;
+    const resources = resourceLinks.map(link => `<a href="${escape(link.url)}">${escape(link.label)} ↗</a>`).join('');
     const next = posts[(posts.indexOf(post) + 1) % posts.length];
+    const seoTitle = post.cve ? `${post.title} (${post.cve.id})` : post.title;
+    const seoDescription = post.seoDescription || post.description;
+    const cveChip = post.cve ? ` <a class="cve-tag" href="${escape(post.cve.url)}" rel="noopener">${escape(post.cve.id)}</a>` : '';
+    const published = post.date ? `${post.date}T00:00:00Z` : null;
+    const updated = post.updated ? `${post.updated}T00:00:00Z` : null;
+    const canonical = `${origin}/blog/${post.slug}/`;
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@graph': [{
+            '@type': 'TechArticle',
+            headline: seoTitle,
+            description: seoDescription,
+            ...(published ? { datePublished: published } : {}),
+            ...(updated ? { dateModified: updated } : {}),
+            author: { '@type': 'Person', name: 'X3r0Day', url: `${origin}/` },
+            publisher: { '@type': 'Organization', name: 'X3r0Day', url: `${origin}/` },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': canonical },
+            url: canonical,
+            inLanguage: 'en',
+            isAccessibleForFree: true,
+            articleSection: post.topic,
+            keywords: [...new Set([post.topic, ...(post.keywords || [])])].join(', '),
+            ...(post.cve ? {
+                identifier: { '@type': 'PropertyValue', propertyID: 'CVE', value: post.cve.id },
+                citation: post.cve.url,
+                about: { '@type': 'SoftwareApplication', name: 'GNU Emacs', applicationCategory: 'TextEditor' }
+            } : {})
+        }, {
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+                { '@type': 'ListItem', position: 1, name: 'Research', item: `${origin}/` },
+                { '@type': 'ListItem', position: 2, name: 'Writeups', item: `${origin}/blog/` },
+                { '@type': 'ListItem', position: 3, name: seoTitle, item: canonical }
+            ]
+        }]
+    };
     const body = `<div class="reading-progress" aria-hidden="true"></div>
 <main id="main" class="article-page wrap">
-    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag ${post.color}">${escape(post.topic)}</span><span>${escape(post.dateLabel)}</span><span>${minutes} min read</span></div><h1>${escape(post.title)}</h1><p class="article-dek">${escape(post.description)}</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/${encodeURIComponent(post.file)}">View Markdown ↗</a></div></header>
+    <header class="article-header"><a class="back-link" href="/blog/"><span aria-hidden="true">←</span> All writing</a><div class="article-meta"><span class="topic-tag ${post.color}">${escape(post.topic)}</span><span>${escape(post.dateLabel)}</span><span>${minutes} min read</span></div><h1>${escape(post.title)}${cveChip}</h1><p class="article-dek">${escape(post.description)}</p><div class="article-byline"><span class="author-mark" aria-hidden="true">x3</span><span>Words &amp; research by <strong>X3r0Day</strong></span><a class="source-link" href="/blog/writeups/${encodeURIComponent(post.file)}">View Markdown ↗</a></div></header>
     <div class="article-resources">${resources}</div>
     <div class="article-layout"><aside class="article-sidebar"><details class="toc" open><summary>In this article <span aria-hidden="true">⌄</span></summary><nav aria-label="Table of contents">${toc}</nav></details></aside><article class="prose" id="post-content">${content}</article></div>
     <div class="article-end"><span>Thanks for reading.</span><a class="text-link" href="/blog/">Back to all writing <span aria-hidden="true">↗</span></a></div>
     <a class="next-post ${next.color}" href="/blog/${next.slug}/"><div><span>Keep reading</span><h2>${escape(next.title)}</h2></div><span aria-hidden="true">↗</span></a>
 </main>`;
-    await save(`blog/${post.slug}/index.html`, layout({ title: post.title, description: post.description, path: `/blog/${post.slug}/`, body, active: 'article', bodyClass: 'reading-page', extraHead: `<link rel="stylesheet" href="${articleStylesheet}">`, extraScripts: '<script defer src="/blog/blog.js"></script>' }));
+    await save(`blog/${post.slug}/index.html`, layout({ title: seoTitle, description: seoDescription, path: `/blog/${post.slug}/`, body, active: 'article', bodyClass: 'reading-page', extraHead: `<link rel="stylesheet" href="${articleStylesheet}">`, extraScripts: '<script defer src="/blog/blog.js"></script>', jsonLd, published, updated, section: post.topic, keywords: post.keywords || [] }));
     postData.push({ ...post, minutes, excerpt: excerpts[0] });
 }
 
@@ -124,11 +178,13 @@ function sourceExcerpt(post, featured = false) {
 }
 
 function featuredEntry(post) {
-    return `<article class="featured-entry"><div class="featured-copy"><div class="featured-meta"><span>${escape(post.topic)}</span><span class="finding-status">Release-branch fix / 31.2</span></div><h3><a href="/blog/${post.slug}/">Emacs directory locals:<br>code execution on file open.</a></h3><p class="featured-description">${escape(post.description)}</p><dl class="finding-record"><div><dt>Trigger</dt><dd>Opening a matching project file</dd></div><div><dt>Root cause</dt><dd>Execution before validation</dd></div><div><dt>Tested</dt><dd>31.1 &amp; pre-fix 32.0.50</dd></div></dl><div class="featured-links"><a class="read-link" href="/blog/${post.slug}/">Read the writeup <span aria-hidden="true">↗</span></a><a href="${escape(post.resources[0].url)}">Upstream advisory ↗</a></div></div>${sourceExcerpt(post, true)}</article>`;
+    const chip = post.cve ? ` <a class="cve-tag" href="${escape(post.cve.url)}" rel="noopener">${escape(post.cve.id)}</a>` : '';
+    const cveRow = post.cve ? `<div><dt>CVE</dt><dd><a href="${escape(post.cve.url)}" rel="noopener">${escape(post.cve.id)}</a></dd></div>` : '';
+    return `<article class="featured-entry"><div class="featured-copy"><div class="featured-meta"><span>${escape(post.topic)}</span><span class="finding-status">Release-branch fix / 31.2</span>${chip}</div><h3><a href="/blog/${post.slug}/">Emacs directory locals:<br>code execution on file open.</a></h3><p class="featured-description">${escape(post.description)}</p><dl class="finding-record"><div><dt>Trigger</dt><dd>Opening a matching project file</dd></div><div><dt>Root cause</dt><dd>Execution before validation</dd></div><div><dt>Tested</dt><dd>31.1 &amp; pre-fix 32.0.50</dd></div>${cveRow}</dl><div class="featured-links"><a class="read-link" href="/blog/${post.slug}/">Read the writeup <span aria-hidden="true">↗</span></a><a href="${escape(post.resources[0].url)}">Upstream advisory ↗</a></div></div>${sourceExcerpt(post, true)}</article>`;
 }
 
 function entry(post, index, notebook = false) {
-    return `<article class="research-entry${notebook ? ' writing-card' : ''}" data-topic="${escape(post.topic)}" data-search="${escape(`${post.title} ${post.description} ${post.topic} ${post.label}`.toLowerCase())}"><div class="entry-copy"><div class="entry-meta"><span>${escape(post.topic)}</span><span>${escape(post.dateLabel)}</span></div><h${notebook ? '2' : '3'}><a href="/blog/${post.slug}/">${escape(post.title)}</a></h${notebook ? '2' : '3'}><p>${escape(post.description)}</p><div class="entry-links"><a class="read-link" href="/blog/${post.slug}/">Read the writeup <span aria-hidden="true">↗</span></a><span>${post.minutes} min read</span></div></div>${sourceExcerpt(post)}</article>`;
+    return `<article class="research-entry${notebook ? ' writing-card' : ''}" data-topic="${escape(post.topic)}" data-search="${escape(`${post.title} ${post.description} ${post.topic} ${post.label} ${post.cve?.id || ''}`.toLowerCase())}"><div class="entry-copy"><div class="entry-meta"><span>${escape(post.topic)}</span><span>${escape(post.dateLabel)}</span></div><h${notebook ? '2' : '3'}><a href="/blog/${post.slug}/">${escape(post.title)}</a></h${notebook ? '2' : '3'}><p>${escape(post.description)}</p><div class="entry-links"><a class="read-link" href="/blog/${post.slug}/">Read the writeup <span aria-hidden="true">↗</span></a><span>${post.minutes} min read</span></div></div>${sourceExcerpt(post)}</article>`;
 }
 
 function archiveEntry(item) {
@@ -140,16 +196,35 @@ const home = (await readFile(resolve(root, 'templates/home.html'), 'utf8'))
     .replace('{{featured}}', featuredEntry(postData[0]))
     .replace('{{research}}', postData.slice(1).map((post, index) => entry(post, index)).join('\n'))
     .replace('{{archive}}', archiveLinks);
-await save('index.html', layout({ title: 'Security research & notes', description: 'Independent security research by X3r0Day. Findings, source notes, disclosure details, and open-source tools.', path: '/', active: 'home', body: home, bodyClass: 'index-page', extraHead: '<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>', extraScripts: '<script type="module" src="https://cdn.jsdelivr.net/npm/ascii.rest@0.4.0/dist/ascii.js" integrity="sha384-SBNELtJu9hcp9Nd2BljjmOuQ4VUromhUiD1ENpl5swn1R1vJCH7/qR3BsQmmOJZA" crossorigin="anonymous"></script>' }));
+await save('index.html', layout({ title: 'Security research & notes', description: 'Independent security research by X3r0Day. Findings, source notes, disclosure details, and open-source tools.', path: '/', active: 'home', body: home, bodyClass: 'index-page', extraHead: '<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>', extraScripts: '<script type="module" src="https://cdn.jsdelivr.net/npm/ascii.rest@0.4.0/dist/ascii.js" integrity="sha384-SBNELtJu9hcp9Nd2BljjmOuQ4VUromhUiD1ENpl5swn1R1vJCH7/qR3BsQmmOJZA" crossorigin="anonymous"></script>', jsonLd: {
+    '@context': 'https://schema.org',
+    '@graph': [
+        { '@type': 'Person', '@id': `${origin}/#person`, name: 'X3r0Day', url: `${origin}/`, jobTitle: 'Security researcher', sameAs: ['https://github.com/X3r0Day'] },
+        { '@type': 'WebSite', '@id': `${origin}/#website`, name: 'X3r0Day', url: `${origin}/`, inLanguage: 'en', publisher: { '@id': `${origin}/#person` } }
+    ]
+} }));
 
 const writing = (await readFile(resolve(root, 'templates/writing.html'), 'utf8'))
     .replaceAll('{{count}}', posts.length)
     .replace('{{posts}}', postData.map((post, index) => entry(post, index, true)).join('\n'))
     .replace('{{archive}}', archiveLinks);
-await save('blog/index.html', layout({ title: 'The notebook', description: 'Research notes by X3r0Day. Bugs, reproducers, and the code paths behind them.', path: '/blog/', body: writing, active: 'blog' }));
+await save('blog/index.html', layout({ title: 'The notebook', description: 'Research notes by X3r0Day. Bugs, reproducers, and the code paths behind them.', path: '/blog/', body: writing, active: 'blog', jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: 'Writeups',
+    url: `${origin}/blog/`,
+    inLanguage: 'en',
+    isPartOf: { '@id': `${origin}/#website` },
+    hasPart: postData.map(post => ({ '@type': 'TechArticle', headline: post.title, url: `${origin}/blog/${post.slug}/` }))
+} }));
 
 const notFound = `<main id="main" class="simple-page wrap"><span class="error-mark" aria-hidden="true">404</span><p class="intro-label">A little off the map</p><h1>Nothing here.<br>Plenty to explore.</h1><p>This address doesn't point to a page. The research is still right where it belongs.</p><div class="simple-actions"><a class="button button-ink" href="/blog/">Browse the writing <span aria-hidden="true">↗</span></a><a class="text-link" href="/">Back to home</a></div></main><script src="/assets/redirects.js"></script>`;
-await save('404.html', layout({ title: 'Page not found', description: 'This page could not be found. Explore security research and writing by X3r0Day.', path: '/404.html', body: notFound, extraHead: '<meta name="robots" content="noindex">' }));
+await save('404.html', layout({ title: 'Page not found', description: 'This page could not be found. Explore security research and writing by X3r0Day.', path: '/404.html', body: notFound, robots: 'noindex, follow' }));
 
-await save('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', '/blog/', ...posts.map(post => `/blog/${post.slug}/`)].map(path => `<url><loc>${origin}${path}</loc></url>`).join('')}</urlset>\n`);
+const sitemapDate = value => !value ? null : /^\d{4}-\d{2}$/.test(value) ? `${value}-01` : value;
+await save('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${['/', '/blog/', ...posts.map(post => `/blog/${post.slug}/`)].map(path => {
+    const post = posts.find(item => path === `/blog/${item.slug}/`);
+    const stamp = post ? sitemapDate(post.updated || post.date) : null;
+    return `<url><loc>${origin}${path}</loc>${stamp ? `<lastmod>${stamp}</lastmod>` : ''}</url>`;
+}).join('')}</urlset>\n`);
 console.log(`Built homepage, writing index, ${posts.length} articles, ${archive.length} archived research links, and sitemap.`);

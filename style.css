@@ -98,6 +98,8 @@ svg, img { max-width: 100%; }
 .featured-entry { display: grid; grid-template-columns: 1.15fr 1fr; gap: 44px; background: var(--surface); border: 2px solid var(--line); padding: 30px; box-shadow: 6px 6px 0 var(--shadow); }
 .featured-meta { display: flex; flex-wrap: wrap; gap: 15px 25px; font-family: var(--display); font-size: 10px; color: var(--muted); }
 .finding-status { color: var(--accent); }
+.cve-tag { display: inline-block; padding: 2px 7px; border: 2px solid #2d4c4c; background: #0b161c; color: #9fe9d2; font-family: var(--display); font-size: 10px; font-weight: 400; line-height: 1.5; letter-spacing: .04em; text-decoration: none; vertical-align: middle; white-space: nowrap; }
+.cve-tag:hover { color: var(--ink); border-color: var(--accent); }
 .featured-copy h3 { font-size: clamp(24px,2.2vw,32px); margin-top: 22px; }
 .featured-copy h3 a { text-decoration: none; }
 .featured-copy h3 a:hover { color: #b7f3e0; }

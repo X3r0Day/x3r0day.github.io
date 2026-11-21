@@ -91,6 +91,45 @@ test('the Emacs article retains the advisory, fix detail, and original reproduct
     }
 });
 
+test('every page carries unique SEO metadata and valid structured data', async () => {
+    const files = ['index.html', 'blog/index.html', '404.html', ...posts.map(post => `blog/${post.slug}/index.html`)];
+    const titles = new Set();
+    const canonicals = new Set();
+    for (const file of files) {
+        const html = await read(file);
+        const title = html.match(/<title>([^<]+)<\/title>/)?.[1];
+        assert.ok(title && title.length <= 70, `${file}: title length ${title?.length}`);
+        assert.ok(!titles.has(title), `${file}: duplicate title`);
+        titles.add(title);
+        const description = html.match(/<meta name="description" content="([^"]+)"/)?.[1];
+        assert.ok(description && description.length >= 70 && description.length <= 175, `${file}: description length ${description?.length}`);
+        const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
+        assert.ok(canonical?.startsWith('https://x3r0day.me/'), `${file}: canonical missing`);
+        assert.ok(!canonicals.has(canonical), `${file}: duplicate canonical`);
+        canonicals.add(canonical);
+        assert.equal((html.match(/<h1[ >]/g) || []).length, 1, `${file}: exactly one h1`);
+        assert.ok(html.includes('property="og:title"') && html.includes('name="twitter:card"'), `${file}: social tags missing`);
+        for (const [, json] of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) JSON.parse(json);
+    }
+    const sitemap = await read('sitemap.xml');
+    for (const [, stamp] of sitemap.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)) assert.match(stamp, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(sitemap.includes('https://x3r0day.me/blog/emacs-dir-locals-code-execution/'));
+});
+
+test('the Emacs article is indexed under its CVE', async () => {
+    const html = await read('blog/emacs-dir-locals-code-execution/index.html');
+    const source = await read('blog/writeups/Emacs Dir Locals Code Execution.md');
+    const record = 'https://www.cve.org/CVERecord?id=CVE-2026-131959';
+    for (const page of [html, source]) assert.ok(page.includes(record));
+    assert.ok(html.includes('<title>Emacs: code execution on file open (CVE-2026-131959) | X3r0Day</title>'));
+    assert.match(html, /<meta name="description" content="CVE-2026-131959:/);
+    assert.match(html, /<h1>Emacs: code execution on file open <a class="cve-tag" href="https:\/\/www\.cve\.org\/CVERecord\?id=CVE-2026-131959"[^>]*>CVE-2026-131959<\/a><\/h1>/);
+    const types = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+        .flatMap(([, json]) => JSON.parse(json)['@graph'] || [])
+        .map(node => node['@type']);
+    assert.ok(types.includes('TechArticle') && types.includes('BreadcrumbList'));
+});
+
 test('homepage previews quote actual writeup code rather than decorative imagery', async () => {
     const home = await read('index.html');
     assert.ok(!/<img\b/.test(home));

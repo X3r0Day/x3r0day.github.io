@@ -1,14 +1,14 @@
 # Opening a README Was Enough: Code Execution Through Emacs Directory Locals
 
-By X3r0Day · November 12, 2026
+By X3r0Day · November 12, 2026 · CVE-2026-131959
 
-I found a validation bypass in GNU Emacs that let a project's `.dir-locals.el` execute arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No evaluation command, local-variable approval, or trust prompt was needed.
+I found a validation bypass in GNU Emacs, tracked as [CVE-2026-131959](https://www.cve.org/CVERecord?id=CVE-2026-131959), that let a project's `.dir-locals.el` execute arbitrary Emacs Lisp when a matching file was opened. The file itself could be an ordinary Markdown README. No evaluation command, local-variable approval, or trust prompt was needed.
 
 The issue affected Emacs 31.1 and the pre-fix 32.0.50 development builds I tested. Emacs 30.2 and older are unaffected. Upstream disclosed the vulnerability on November 11, credited the discovery to X3r0Day, and published Stefan Monnier's patch. Sean Whitton subsequently confirmed that the fix was on the release branch, with the bug marked fixed in version 31.2.
 
 **Patch status:** the fix is available upstream. The [November 11 announcement](https://www.openwall.com/lists/oss-security/2026/11/11/7) described 31.2 as an upcoming release; a fixed release branch is not the same thing as an already-shipped release. The [public bug report, #82213](https://debbugs.gnu.org/82213), contains the original report, patch, and release-branch confirmation.
 
-**Severity:** 7.8 (High) — `CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H`.
+**Severity:** 7.8 (High) — `CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H`. **CVE:** [CVE-2026-131959](https://www.cve.org/CVERecord?id=CVE-2026-131959).
 
 ## The short version
 
@@ -276,6 +276,7 @@ Emacs already had a rule against this exact kind of directory-local function exe
 
 ## References
 
+- [CVE-2026-131959: Emacs .dir-locals.el code execution](https://www.cve.org/CVERecord?id=CVE-2026-131959)
 - [oss-security: Emacs .dir-locals.el arbitrary code execution, November 11, 2026](https://www.openwall.com/lists/oss-security/2026/11/11/7)
 - [GNU Emacs bug #82213: original report, PoCs, patch, and discussion](https://debbugs.gnu.org/82213)
 - [Release-branch fix confirmation, message #13](https://debbugs.gnu.org/82213#13)

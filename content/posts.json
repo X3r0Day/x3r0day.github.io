@@ -4,9 +4,13 @@
     "file": "Emacs Dir Locals Code Execution.md",
     "title": "Emacs: code execution on file open",
     "description": "An ordinary file. An unexpected execution path. How Emacs directory locals bypassed the very check meant to keep them safe.",
+    "seoDescription": "CVE-2026-131959: a .dir-locals.el file could run arbitrary Emacs Lisp on file open in Emacs 31.1. Root cause, working PoCs, and the 31.2 patch.",
+    "cve": { "id": "CVE-2026-131959", "url": "https://www.cve.org/CVERecord?id=CVE-2026-131959" },
+    "keywords": ["CVE-2026-131959", "GNU Emacs", ".dir-locals.el", "auto-mode-alist", "local code execution", "editor security", "Emacs 31.1"],
     "topic": "Editor security",
     "label": "Upstream fix",
     "date": "2026-11-12",
+    "updated": "2026-11-21",
     "dateLabel": "November 12, 2026",
     "color": "iris",
     "preview": {
